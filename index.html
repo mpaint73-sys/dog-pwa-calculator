@@ -122,6 +122,117 @@
 }
 .cost-total .label { font-size: 13px; color: #888; }
 .cost-total .value { font-size: 28px; font-weight: 700; color: #b8860b; }
+
+/* ==================== MOBILE RESPONSIVE IMPROVEMENTS ==================== */
+@media (max-width: 480px) {
+  body {
+    padding: 12px;
+  }
+  
+  .container {
+    max-width: 100%;
+  }
+  
+  h1 {
+    font-size: 22px;
+  }
+  
+  .subtitle {
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+  
+  .card {
+    padding: 16px;
+    margin-bottom: 12px;
+    border-radius: 10px;
+  }
+  
+  .card h2 {
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+  
+  .daily-portion {
+    padding: 16px;
+  }
+  
+  .daily-portion .value {
+    font-size: 36px;
+  }
+  
+  .daily-portion .unit {
+    font-size: 15px;
+  }
+  
+  .component {
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .component .icon {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+  
+  .component .name {
+    font-size: 13px;
+  }
+  
+  .component .desc {
+    font-size: 10px;
+  }
+  
+  .component .pct-input {
+    width: 48px;
+    padding: 5px 6px;
+    font-size: 13px;
+  }
+  
+  .component .grams {
+    font-size: 12px;
+    min-width: 52px;
+  }
+  
+  .preset-btn {
+    padding: 5px 11px;
+    font-size: 11px;
+  }
+  
+  .input-group input,
+  .input-group select {
+    padding: 9px 10px;
+    font-size: 15px;
+  }
+  
+  .cost-row {
+    gap: 8px;
+    padding: 8px 0;
+  }
+  
+  .cost-name {
+    font-size: 13px;
+  }
+  
+  .cost-kg {
+    width: 70px;
+    font-size: 12px;
+  }
+  
+  .cost-price {
+    width: 95px;
+  }
+  
+  .cost-subtotal {
+    width: 85px;
+    font-size: 13px;
+  }
+  
+  .cost-total .value {
+    font-size: 24px;
+  }
+}
 </style>
 </head>
 <body>
@@ -223,7 +334,7 @@
       <label style="font-size:13px; color:#777;">Количество дней</label>
       <input type="number" id="daysCount" value="30" min="1" max="365" step="1" 
              style="width:120px; padding:8px 12px; border:2px solid #e0e0e0; border-radius:8px; font-size:16px;"
-             oninput="calculatePeriodCost()">
+             oninput="updateCostValues()">
     </div>
 
     <div id="cost-rows"></div>
@@ -274,6 +385,7 @@ function init() {
   document.getElementById('meals').addEventListener('change', calculate);
   document.getElementById('pctBody').addEventListener('input', calculate);
   calculate();
+  renderCostRows();   // первый рендер секции "на период"
 }
 
 function onAgeChange() {
@@ -380,62 +492,102 @@ function calculate() {
   }
   
   // Обновляем расчёт на период если он есть
-  if (document.getElementById('cost-rows')) {
-    calculatePeriodCost();
+  if (document.getElementById('cost-rows') && costRowsRendered) {
+    updateCostValues();
+  } else if (document.getElementById('cost-rows')) {
+    renderCostRows();
   }
 }
 
 // ==================== НОВЫЕ ФУНКЦИИ ДЛЯ РАСЧЁТА НА ПЕРИОД ====================
 
-function calculatePeriodCost() {
+// ==================== РАСЧЁТ НА ПЕРИОД (без потери фокуса) ====================
+
+let costRowsRendered = false;
+
+function renderCostRows() {
+  const container = document.getElementById('cost-rows');
+  if (!container) return;
+
   const days = parseInt(document.getElementById('daysCount').value) || 30;
   const weight = parseFloat(document.getElementById('weight').value) || 0;
   const pctBody = parseFloat(document.getElementById('pctBody').value) || 0;
   const totalDailyGrams = Math.round(weight * pctBody * 10);
-  
-  const container = document.getElementById('cost-rows');
-  if (!container) return;
 
   let html = '';
-  let grandTotal = 0;
 
-  COMPONENTS.forEach((c, i) => {
-    const dailyGrams = Math.round(totalDailyGrams * pcts[i] / 100);
+  COMPONENTS.forEach((c) => {
+    const dailyGrams = Math.round(totalDailyGrams * pcts[COMPONENTS.indexOf(c)] / 100);
     const totalGrams = dailyGrams * days;
     const totalKg = (totalGrams / 1000).toFixed(2);
-    
-    // Получаем цену из input (если есть)
-    const priceInputId = `price-${c.id}`;
-    let price = 0;
-    const existingInput = document.getElementById(priceInputId);
-    if (existingInput) {
-      price = parseFloat(existingInput.value) || 0;
-    }
-    
-    const subtotal = (parseFloat(totalKg) * price).toFixed(0);
-    grandTotal += parseFloat(subtotal);
 
     html += `
-      <div class="cost-row">
+      <div class="cost-row" data-id="${c.id}">
         <div class="cost-name">
           <span style="font-size:16px;">${c.icon}</span> 
           <strong>${c.name}</strong>
         </div>
-        <div class="cost-kg">${totalKg} кг</div>
+        <div class="cost-kg" data-kg>${totalKg} кг</div>
         <div class="cost-price">
-          <input type="number" id="${priceInputId}" class="cost-input" 
-                 placeholder="0" value="${price || ''}" step="10"
-                 oninput="calculatePeriodCost()">
+          <input type="number" class="cost-input price-input" 
+                 placeholder="0" step="10" data-id="${c.id}">
           <span style="font-size:12px; color:#999;">₽/кг</span>
         </div>
-        <div class="cost-subtotal">${subtotal} ₽</div>
+        <div class="cost-subtotal" data-subtotal>0 ₽</div>
       </div>
     `;
   });
 
   container.innerHTML = html;
+  costRowsRendered = true;
 
-  document.getElementById('totalCost').textContent = `${Math.round(grandTotal).toLocaleString('ru-RU')} ₽`;
+  // Добавляем один общий обработчик на контейнер (event delegation)
+  container.oninput = function(e) {
+    if (e.target.classList.contains('price-input')) {
+      updateCostValues();
+    }
+  };
+
+  // Первый расчёт значений
+  updateCostValues();
+}
+
+function updateCostValues() {
+  const days = parseInt(document.getElementById('daysCount').value) || 30;
+  const weight = parseFloat(document.getElementById('weight').value) || 0;
+  const pctBody = parseFloat(document.getElementById('pctBody').value) || 0;
+  const totalDailyGrams = Math.round(weight * pctBody * 10);
+
+  let grandTotal = 0;
+
+  COMPONENTS.forEach((c) => {
+    const dailyGrams = Math.round(totalDailyGrams * pcts[COMPONENTS.indexOf(c)] / 100);
+    const totalGrams = dailyGrams * days;
+    const totalKg = (totalGrams / 1000).toFixed(2);
+
+    const row = document.querySelector(`.cost-row[data-id="${c.id}"]`);
+    if (!row) return;
+
+    // Обновляем кг
+    const kgEl = row.querySelector('[data-kg]');
+    if (kgEl) kgEl.textContent = `${totalKg} кг`;
+
+    // Берём цену из input
+    const priceInput = row.querySelector('.price-input');
+    const price = priceInput ? (parseFloat(priceInput.value) || 0) : 0;
+
+    const subtotal = (parseFloat(totalKg) * price).toFixed(0);
+    grandTotal += parseFloat(subtotal);
+
+    // Обновляем subtotal
+    const subtotalEl = row.querySelector('[data-subtotal]');
+    if (subtotalEl) subtotalEl.textContent = `${subtotal} ₽`;
+  });
+
+  const totalEl = document.getElementById('totalCost');
+  if (totalEl) {
+    totalEl.textContent = `${Math.round(grandTotal).toLocaleString('ru-RU')} ₽`;
+  }
 }
 
 function copyShoppingList() {
@@ -481,12 +633,11 @@ function copyShoppingList() {
 
 // Инициализация расчёта на период при загрузке
 document.addEventListener('DOMContentLoaded', () => {
-  // Небольшая задержка чтобы все элементы были готовы
   setTimeout(() => {
     const daysInput = document.getElementById('daysCount');
     if (daysInput) {
-      daysInput.addEventListener('input', calculatePeriodCost);
-      // Первый расчёт запустится из calculate()
+      // daysInput уже имеет oninput="updateCostValues()" в HTML
+      // renderCostRows() вызовется автоматически при первом calculate()
     }
   }, 300);
 });
