@@ -1,0 +1,25 @@
+{
+  "name": "Калькулятор пайки для собак",
+  "short_name": "Пайка для собак",
+  "description": "Натуральное питание собак — расчёт суточной порции и компонентов. Работает полностью оффлайн.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f5f0eb",
+  "theme_color": "#b8860b",
+  "orientation": "portrait-primary",
+  "scope": "./",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

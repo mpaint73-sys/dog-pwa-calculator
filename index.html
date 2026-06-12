@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Калькулятор пайки для собак</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#b8860b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Пайка для собак">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f5f0eb; color: #333; padding: 20px; }
+  .container { max-width: 700px; margin: 0 auto; }
+  h1 { text-align: center; margin-bottom: 8px; font-size: 24px; }
+  .subtitle { text-align: center; color: #888; margin-bottom: 24px; font-size: 13px; }
+  .card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .card h2 { font-size: 16px; margin-bottom: 16px; color: #555; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+  .input-row { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .input-group { flex: 1; min-width: 200px; }
+  .input-group label { display: block; font-size: 13px; color: #777; margin-bottom: 4px; }
+  .input-group input, .input-group select { width: 100%; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; transition: border-color 0.2s; }
+  .input-group input:focus, .input-group select:focus { outline: none; border-color: #c9a87c; }
+
+  .daily-portion { text-align: center; padding: 20px; background: linear-gradient(135deg, #fdf6ee, #f5e6d0); border-radius: 12px; }
+  .daily-portion .value { font-size: 42px; font-weight: 700; color: #b8860b; }
+  .daily-portion .unit { font-size: 16px; color: #999; }
+  .daily-portion .per-meal { font-size: 14px; color: #888; margin-top: 4px; }
+
+  .component { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .component .icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .component .info { flex: 1; }
+  .component .name { font-size: 14px; font-weight: 600; }
+  .component .desc { font-size: 11px; color: #999; }
+  .component .pct-wrap { display: flex; align-items: center; gap: 6px; }
+  .component .pct-input { width: 52px; padding: 6px 8px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; font-weight: 600; text-align: center; }
+  .component .pct-input:focus { outline: none; border-color: #c9a87c; }
+  .component .pct-sign { color: #aaa; font-size: 14px; }
+  .component .grams { font-size: 13px; color: #b8860b; font-weight: 600; min-width: 60px; text-align: right; }
+
+  .pct-total { text-align: center; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 600; }
+  .pct-total.ok { background: #e8f5e9; color: #2e7d32; }
+  .pct-total.warn { background: #fff3e0; color: #e65100; }
+  .pct-total.err { background: #fce4ec; color: #c62828; }
+
+  .bar-wrap { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 8px; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+
+  .preset-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .preset-btn { padding: 6px 14px; border: 2px solid #e0e0e0; border-radius: 20px; background: #fff; cursor: pointer; font-size: 12px; transition: all 0.2s; }
+  .preset-btn:hover { border-color: #c9a87c; background: #fdf6ee; }
+  .preset-btn.active { border-color: #c9a87c; background: #fdf6ee; font-weight: 600; }
+
+  .note { font-size: 11px; color: #aaa; text-align: center; margin-top: 8px; }
+
+/* New styles for collapsible and cost section */
+.collapsible-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+.collapsible-header .toggle-icon {
+  transition: transform 0.2s;
+  font-size: 18px;
+}
+.collapsible-header.collapsed .toggle-icon {
+  transform: rotate(-90deg);
+}
+.collapsed-content {
+  display: none;
+}
+.summary-bar {
+  background: #fdf6ee;
+  border: 1px solid #e8d9c0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.summary-bar .label { color: #888; font-size: 12px; }
+.summary-bar .value { font-weight: 600; color: #b8860b; }
+
+.cost-section {
+  margin-top: 24px;
+}
+.cost-input {
+  width: 90px;
+  padding: 6px 8px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  text-align: right;
+}
+.cost-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.cost-row:last-child {
+  border-bottom: none;
+}
+.cost-name { flex: 1; font-size: 14px; }
+.cost-kg { width: 80px; text-align: right; font-size: 13px; color: #666; }
+.cost-price { width: 110px; }
+.cost-subtotal { width: 100px; text-align: right; font-weight: 600; color: #b8860b; font-size: 14px; }
+.cost-total {
+  margin-top: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #fdf6ee, #f5e6d0);
+  border-radius: 12px;
+  text-align: center;
+}
+.cost-total .label { font-size: 13px; color: #888; }
+.cost-total .value { font-size: 28px; font-weight: 700; color: #b8860b; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Калькулятор пайки</h1>
+  <p class="subtitle">Натуральное питание собак — расчёт суточной порции и компонентов</p>
+
+  <div class="card">
+    <div class="collapsible-header" onclick="toggleParameters()">
+      <h2 style="margin:0; border:none; padding:0;">Параметры собаки</h2>
+      <span class="toggle-icon">▼</span>
+    </div>
+    
+    <!-- Summary bar (shown when collapsed) -->
+    <div id="params-summary" class="summary-bar" style="display:none; margin-top:12px;">
+      <div>
+        <span class="label">Вес</span><br>
+        <span class="value" id="summary-weight">10 кг</span>
+      </div>
+      <div>
+        <span class="label">Порция в день</span><br>
+        <span class="value" id="summary-daily">300 г</span>
+      </div>
+      <div>
+        <span class="label">Кормлений</span><br>
+        <span class="value" id="summary-meals">2</span>
+      </div>
+      <div style="margin-left:auto; font-size:12px; color:#c9a87c; cursor:pointer;" onclick="toggleParameters(); event.stopImmediatePropagation();">
+        Изменить →
+      </div>
+    </div>
+
+    <div id="params-content">
+      <div class="input-row">
+        <div class="input-group">
+          <label>Вес собаки (кг)</label>
+          <input type="number" id="weight" min="0.5" max="100" step="0.5" value="10">
+        </div>
+        <div class="input-group">
+          <label>Возраст</label>
+          <select id="ageGroup">
+            <option value="1-3">1–3 месяца</option>
+            <option value="3-6">3–6 месяцев</option>
+            <option value="6-12">6–12 месяцев</option>
+            <option value="12-18">12–18 месяцев</option>
+            <option value="18+" selected>18+ месяцев (взрослая)</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="input-row">
+        <div class="input-group">
+          <label>Кормлений в день</label>
+          <select id="meals">
+            <option value="6">6</option>
+            <option value="5">5</option>
+            <option value="4">4</option>
+            <option value="3">3</option>
+            <option value="2" selected>2</option>
+            <option value="1">1</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>% от веса тела</label>
+          <input type="number" id="pctBody" min="1" max="15" step="0.5" value="3">
+        </div>
+      </div>
+    </div> <!-- end params-content -->
+  </div> <!-- end card -->
+
+  <div class="daily-portion">
+    <div class="value" id="totalGrams">300</div>
+    <div class="unit">грамм в день</div>
+    <div class="per-meal" id="perMeal">60 г × 2 кормления</div>
+  </div>
+
+  <div class="card" style="margin-top: 16px;">
+    <h2>Соотношение компонентов</h2>
+
+    <div class="preset-row">
+      <button class="preset-btn active" onclick="applyPreset('classic')">Классика 40/30/20/10</button>
+      <button class="preset-btn" onclick="applyPreset('moreOrgans')">Больше органов</button>
+      <button class="preset-btn" onclick="applyPreset('moreMeat')">Больше мяса</button>
+      <button class="preset-btn" onclick="applyPreset('custom')">Свой вариант</button>
+    </div>
+
+    <div id="components"></div>
+
+    <div class="pct-total ok" id="pctTotal">Сумма: 100%</div>
+  </div>
+
+  <p class="note">Пропорции усреднённые. Подбирайте соотношение под своего питомца, ориентируясь на стул и самочувствие. Овощи не включены в расчёт (5-20% сверх пайки).</p>
+
+  <!-- Новый раздел: Расчёт на период + стоимость -->
+  <div class="card cost-section">
+    <h2>📅 Расчёт на период + стоимость</h2>
+    
+    <div style="margin-bottom: 16px;">
+      <label style="font-size:13px; color:#777;">Количество дней</label>
+      <input type="number" id="daysCount" value="30" min="1" max="365" step="1" 
+             style="width:120px; padding:8px 12px; border:2px solid #e0e0e0; border-radius:8px; font-size:16px;"
+             oninput="calculatePeriodCost()">
+    </div>
+
+    <div id="cost-rows"></div>
+
+    <div class="cost-total">
+      <div class="label">ИТОГО за период</div>
+      <div class="value" id="totalCost">0 ₽</div>
+    </div>
+    
+    <div style="text-align:center; margin-top:12px;">
+      <button onclick="copyShoppingList()" 
+              style="background:#b8860b; color:white; border:none; padding:10px 20px; border-radius:8px; font-size:14px; cursor:pointer;">
+        📋 Скопировать список покупок
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COMPONENTS = [
+  { id: 'meat', name: 'Мясо / мясная обрезь', desc: 'Мякоть кусковая, птица, диафрагма, обрезь', color: '#e57373', icon: '🥩', defaultPct: 40 },
+  { id: 'muscle', name: 'Мышечные органы', desc: 'Сердце, желудки, лёгкое, рубец', color: '#f06292', icon: '🫀', defaultPct: 30 },
+  { id: 'bone', name: 'Мясокостное', desc: 'Шеи, головы, каркасы птицы, хвосты', color: '#ba68c8', icon: '🦴', defaultPct: 20 },
+  { id: 'secreting', name: 'Кроветворные органы', desc: 'Печень, почки, селезёнка', color: '#9575cd', icon: '🫁', defaultPct: 10 },
+];
+
+const PRESETS = {
+  classic: [40, 30, 20, 10],
+  moreOrgans: [30, 40, 15, 15],
+  moreMeat: [50, 20, 20, 10],
+  custom: null,
+};
+
+const AGE_RANGES = {
+  '1-3':  { min: 5, max: 8, defaultPct: 6.5, defaultMeals: 5 },
+  '3-6':  { min: 4, max: 6, defaultPct: 5,   defaultMeals: 3 },
+  '6-12': { min: 3, max: 5, defaultPct: 4,   defaultMeals: 2 },
+  '12-18':{ min: 2, max: 3, defaultPct: 2.5, defaultMeals: 2 },
+  '18+':  { min: 2, max: 3, defaultPct: 3,   defaultMeals: 2 },
+};
+
+let pcts = COMPONENTS.map(c => c.defaultPct);
+
+function init() {
+  renderComponents();
+  document.getElementById('weight').addEventListener('input', calculate);
+  document.getElementById('ageGroup').addEventListener('change', onAgeChange);
+  document.getElementById('meals').addEventListener('change', calculate);
+  document.getElementById('pctBody').addEventListener('input', calculate);
+  calculate();
+}
+
+function onAgeChange() {
+  const age = document.getElementById('ageGroup').value;
+  const r = AGE_RANGES[age];
+  document.getElementById('pctBody').value = r.defaultPct;
+  document.getElementById('meals').value = r.defaultMeals;
+  calculate();
+}
+
+function toggleParameters() {
+  const content = document.getElementById('params-content');
+  const summary = document.getElementById('params-summary');
+  const header = document.querySelector('.collapsible-header');
+  
+  if (content.style.display === 'none' || content.style.display === '') {
+    content.style.display = 'block';
+    summary.style.display = 'none';
+    header.classList.remove('collapsed');
+  } else {
+    content.style.display = 'none';
+    summary.style.display = 'flex';
+    header.classList.add('collapsed');
+    updateSummaryBar();
+  }
+}
+
+function updateSummaryBar() {
+  const weight = parseFloat(document.getElementById('weight').value) || 0;
+  const pctBody = parseFloat(document.getElementById('pctBody').value) || 0;
+  const meals = parseInt(document.getElementById('meals').value) || 1;
+  const totalGrams = Math.round(weight * pctBody * 10);
+  
+  document.getElementById('summary-weight').textContent = `${weight} кг`;
+  document.getElementById('summary-daily').textContent = `${totalGrams} г`;
+  document.getElementById('summary-meals').textContent = meals;
+}
+
+function renderComponents() {
+  const wrap = document.getElementById('components');
+  wrap.innerHTML = COMPONENTS.map((c, i) => `
+    <div class="component">
+      <div class="icon" style="background:${c.color}22;color:${c.color}">${c.icon}</div>
+      <div class="info">
+        <div class="name">${c.name}</div>
+        <div class="desc">${c.desc}</div>
+        <div class="bar-wrap">
+          <div class="bar-fill" id="bar-${c.id}" style="width:${pcts[i]}%;background:${c.color}"></div>
+        </div>
+      </div>
+      <div class="pct-wrap">
+        <input class="pct-input" type="number" min="0" max="100" value="${pcts[i]}" data-idx="${i}" oninput="onPctChange(this)">
+        <span class="pct-sign">%</span>
+      </div>
+      <div class="grams" id="grams-${c.id}">0 г</div>
+    </div>
+  `).join('');
+}
+
+function onPctChange(el) {
+  const idx = parseInt(el.dataset.idx);
+  pcts[idx] = parseFloat(el.value) || 0;
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  calculate();
+}
+
+function applyPreset(key) {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  if (PRESETS[key]) {
+    pcts = [...PRESETS[key]];
+    renderComponents();
+  }
+  calculate();
+}
+
+function calculate() {
+  const weight = parseFloat(document.getElementById('weight').value) || 0;
+  const pctBody = parseFloat(document.getElementById('pctBody').value) || 0;
+  const meals = parseInt(document.getElementById('meals').value) || 1;
+
+  const totalGrams = Math.round(weight * pctBody * 10); // weight * (pct/100) * 1000
+  const perMeal = Math.round(totalGrams / meals);
+
+  document.getElementById('totalGrams').textContent = totalGrams;
+  document.getElementById('perMeal').textContent = `${perMeal} г × ${meals} кормлен${meals === 1 ? 'ие' : meals < 5 ? 'ия' : 'ий'}`;
+
+  const pctSum = pcts.reduce((a, b) => a + b, 0);
+
+  COMPONENTS.forEach((c, i) => {
+    const grams = Math.round(totalGrams * pcts[i] / 100);
+    document.getElementById(`grams-${c.id}`).textContent = `${grams} г`;
+    document.getElementById(`bar-${c.id}`).style.width = `${Math.min(pcts[i], 100)}%`;
+  });
+
+  const el = document.getElementById('pctTotal');
+  el.textContent = `Сумма: ${pctSum}%`;
+  el.className = 'pct-total ' + (pctSum === 100 ? 'ok' : pctSum > 90 && pctSum < 110 ? 'warn' : 'err');
+
+  // Обновляем summary bar если он видим
+  const summary = document.getElementById('params-summary');
+  if (summary && summary.style.display !== 'none') {
+    updateSummaryBar();
+  }
+  
+  // Обновляем расчёт на период если он есть
+  if (document.getElementById('cost-rows')) {
+    calculatePeriodCost();
+  }
+}
+
+// ==================== НОВЫЕ ФУНКЦИИ ДЛЯ РАСЧЁТА НА ПЕРИОД ====================
+
+function calculatePeriodCost() {
+  const days = parseInt(document.getElementById('daysCount').value) || 30;
+  const weight = parseFloat(document.getElementById('weight').value) || 0;
+  const pctBody = parseFloat(document.getElementById('pctBody').value) || 0;
+  const totalDailyGrams = Math.round(weight * pctBody * 10);
+  
+  const container = document.getElementById('cost-rows');
+  if (!container) return;
+
+  let html = '';
+  let grandTotal = 0;
+
+  COMPONENTS.forEach((c, i) => {
+    const dailyGrams = Math.round(totalDailyGrams * pcts[i] / 100);
+    const totalGrams = dailyGrams * days;
+    const totalKg = (totalGrams / 1000).toFixed(2);
+    
+    // Получаем цену из input (если есть)
+    const priceInputId = `price-${c.id}`;
+    let price = 0;
+    const existingInput = document.getElementById(priceInputId);
+    if (existingInput) {
+      price = parseFloat(existingInput.value) || 0;
+    }
+    
+    const subtotal = (parseFloat(totalKg) * price).toFixed(0);
+    grandTotal += parseFloat(subtotal);
+
+    html += `
+      <div class="cost-row">
+        <div class="cost-name">
+          <span style="font-size:16px;">${c.icon}</span> 
+          <strong>${c.name}</strong>
+        </div>
+        <div class="cost-kg">${totalKg} кг</div>
+        <div class="cost-price">
+          <input type="number" id="${priceInputId}" class="cost-input" 
+                 placeholder="0" value="${price || ''}" step="10"
+                 oninput="calculatePeriodCost()">
+          <span style="font-size:12px; color:#999;">₽/кг</span>
+        </div>
+        <div class="cost-subtotal">${subtotal} ₽</div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+
+  document.getElementById('totalCost').textContent = `${Math.round(grandTotal).toLocaleString('ru-RU')} ₽`;
+}
+
+function copyShoppingList() {
+  const days = parseInt(document.getElementById('daysCount').value) || 30;
+  const weight = parseFloat(document.getElementById('weight').value) || 0;
+  const pctBody = parseFloat(document.getElementById('pctBody').value) || 0;
+  const totalDailyGrams = Math.round(weight * pctBody * 10);
+  
+  let text = `Список покупок на ${days} дней для собаки ${weight} кг\n\n`;
+  
+  COMPONENTS.forEach((c, i) => {
+    const dailyGrams = Math.round(totalDailyGrams * pcts[i] / 100);
+    const totalGrams = dailyGrams * days;
+    const totalKg = (totalGrams / 1000).toFixed(2);
+    
+    const priceInput = document.getElementById(`price-${c.id}`);
+    const price = priceInput ? (parseFloat(priceInput.value) || 0) : 0;
+    const subtotal = (parseFloat(totalKg) * price).toFixed(0);
+    
+    text += `${c.icon} ${c.name}: ${totalKg} кг`;
+    if (price > 0) text += ` — ${subtotal} ₽`;
+    text += `\n`;
+  });
+  
+  const totalCostEl = document.getElementById('totalCost');
+  text += `\nИТОГО: ${totalCostEl.textContent}`;
+  
+  navigator.clipboard.writeText(text).then(() => {
+    const originalText = event.target ? event.target.innerHTML : '';
+    const btns = document.querySelectorAll('button');
+    btns.forEach(b => {
+      if (b.innerHTML.includes('Скопировать')) {
+        const old = b.innerHTML;
+        b.innerHTML = '✅ Скопировано!';
+        setTimeout(() => { b.innerHTML = old; }, 2000);
+      }
+    });
+  }).catch(() => {
+    // Fallback
+    prompt('Скопируйте список:', text);
+  });
+}
+
+// Инициализация расчёта на период при загрузке
+document.addEventListener('DOMContentLoaded', () => {
+  // Небольшая задержка чтобы все элементы были готовы
+  setTimeout(() => {
+    const daysInput = document.getElementById('daysCount');
+    if (daysInput) {
+      daysInput.addEventListener('input', calculatePeriodCost);
+      // Первый расчёт запустится из calculate()
+    }
+  }, 300);
+});
+
+// Регистрация Service Worker для работы оффлайн (PWA)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(registration => {
+        console.log('ServiceWorker зарегистрирован успешно:', registration.scope);
+      })
+      .catch(error => {
+        console.log('Ошибка регистрации ServiceWorker:', error);
+      });
+  });
+}
+
+init();
+</script>
+</body>
+</html>
