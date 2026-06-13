@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Калькулятор пайки для собак</title>
 <link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#b8860b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,16 +14,85 @@
 <meta name="apple-mobile-web-app-title" content="Пайка для собак">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', sans-serif; background: #f5f0eb; color: #333; padding: 20px; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #f5f0eb;
+    color: #333;
+    padding: 20px;
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    touch-action: manipulation;
+  }
   .container { max-width: 700px; margin: 0 auto; }
   h1 { text-align: center; margin-bottom: 8px; font-size: 24px; }
-  .subtitle { text-align: center; color: #888; margin-bottom: 24px; font-size: 13px; }
+  .subtitle { text-align: center; color: #888; margin-bottom: 16px; font-size: 13px; }
+
+  .offline-banner, .update-banner {
+    display: none;
+    text-align: center;
+    padding: 8px 12px;
+    font-size: 13px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+  .offline-banner.show { display: block; background: #fff3e0; color: #e65100; }
+  .update-banner.show { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; background: #e3f2fd; color: #1565c0; }
+  .update-banner button {
+    background: #1565c0; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; min-height: 44px;
+  }
+
+  .dog-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 16px;
+    padding-bottom: 4px;
+  }
+  .dog-tabs::-webkit-scrollbar { height: 4px; }
+  .tab-btn {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    padding: 10px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 20px;
+    background: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    min-height: 44px;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .tab-btn.active { border-color: #b8860b; background: #fdf6ee; font-weight: 600; color: #8b6914; }
+  .tab-btn.tab-add { font-size: 20px; padding: 8px 18px; font-weight: 600; }
+
+  .dog-actions, .quick-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .action-btn {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    min-height: 44px;
+    border: none;
+  }
+  .action-btn.primary { background: #b8860b; color: #fff; }
+  .action-btn.secondary { background: #fff; border: 2px solid #e0e0e0; color: #555; }
+  .action-btn.danger { background: #fff; border: 2px solid #ffcdd2; color: #c62828; }
+
   .card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
   .card h2 { font-size: 16px; margin-bottom: 16px; color: #555; border-bottom: 1px solid #eee; padding-bottom: 8px; }
   .input-row { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
   .input-group { flex: 1; min-width: 200px; }
   .input-group label { display: block; font-size: 13px; color: #777; margin-bottom: 4px; }
-  .input-group input, .input-group select { width: 100%; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; transition: border-color 0.2s; }
+  .input-group input, .input-group select {
+    width: 100%; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; transition: border-color 0.2s;
+  }
   .input-group input:focus, .input-group select:focus { outline: none; border-color: #c9a87c; }
 
   .daily-portion { text-align: center; padding: 20px; background: linear-gradient(135deg, #fdf6ee, #f5e6d0); border-radius: 12px; }
@@ -29,242 +100,154 @@
   .daily-portion .unit { font-size: 16px; color: #999; }
   .daily-portion .per-meal { font-size: 14px; color: #888; margin-top: 4px; }
 
-  .component { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-  .component .icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-  .component .info { flex: 1; }
+  .component { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+  .component .icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+  .component .info { flex: 1; min-width: 0; }
   .component .name { font-size: 14px; font-weight: 600; }
-  .component .desc { font-size: 11px; color: #999; }
-  .component .pct-wrap { display: flex; align-items: center; gap: 6px; }
+  .component .desc { font-size: 11px; color: #999; margin-bottom: 6px; }
+  .slider-row { margin-bottom: 4px; }
+  .pct-slider { width: 100%; height: 28px; cursor: pointer; }
+  .component .pct-wrap { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-top: 4px; }
   .component .pct-input { width: 52px; padding: 6px 8px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; font-weight: 600; text-align: center; }
   .component .pct-input:focus { outline: none; border-color: #c9a87c; }
   .component .pct-sign { color: #aaa; font-size: 14px; }
-  .component .grams { font-size: 13px; color: #b8860b; font-weight: 600; min-width: 60px; text-align: right; }
+  .component .grams { font-size: 13px; color: #b8860b; font-weight: 600; min-width: 60px; text-align: right; flex-shrink: 0; margin-top: 8px; }
 
   .pct-total { text-align: center; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 600; }
   .pct-total.ok { background: #e8f5e9; color: #2e7d32; }
   .pct-total.warn { background: #fff3e0; color: #e65100; }
   .pct-total.err { background: #fce4ec; color: #c62828; }
 
-  .bar-wrap { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 8px; }
-  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
-
   .preset-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-  .preset-btn { padding: 6px 14px; border: 2px solid #e0e0e0; border-radius: 20px; background: #fff; cursor: pointer; font-size: 12px; transition: all 0.2s; }
+  .preset-btn { padding: 8px 14px; border: 2px solid #e0e0e0; border-radius: 20px; background: #fff; cursor: pointer; font-size: 12px; transition: all 0.2s; min-height: 44px; }
   .preset-btn:hover { border-color: #c9a87c; background: #fdf6ee; }
   .preset-btn.active { border-color: #c9a87c; background: #fdf6ee; font-weight: 600; }
 
   .note { font-size: 11px; color: #aaa; text-align: center; margin-top: 8px; }
 
-/* New styles for collapsible and cost section */
-.collapsible-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  user-select: none;
-}
-.collapsible-header .toggle-icon {
-  transition: transform 0.2s;
-  font-size: 18px;
-}
-.collapsible-header.collapsed .toggle-icon {
-  transform: rotate(-90deg);
-}
-.collapsed-content {
-  display: none;
-}
-.summary-bar {
-  background: #fdf6ee;
-  border: 1px solid #e8d9c0;
-  border-radius: 8px;
-  padding: 10px 14px;
-  margin-bottom: 12px;
-  font-size: 14px;
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-.summary-bar .label { color: #888; font-size: 12px; }
-.summary-bar .value { font-weight: 600; color: #b8860b; }
+  .collapsible-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; min-height: 44px; }
+  .collapsible-header .toggle-icon { transition: transform 0.2s; font-size: 18px; }
+  .collapsible-header.collapsed .toggle-icon { transform: rotate(-90deg); }
+  .summary-bar {
+    background: #fdf6ee; border: 1px solid #e8d9c0; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; margin-top: 12px;
+    font-size: 14px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+  }
+  .summary-bar .label { color: #888; font-size: 12px; }
+  .summary-bar .value { font-weight: 600; color: #b8860b; }
 
-.cost-section {
-  margin-top: 24px;
-}
-.cost-input {
-  width: 90px;
-  padding: 6px 8px;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 14px;
-  text-align: right;
-}
-.cost-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-.cost-row:last-child {
-  border-bottom: none;
-}
-.cost-name { flex: 1; font-size: 14px; }
-.cost-kg { width: 80px; text-align: right; font-size: 13px; color: #666; }
-.cost-price { width: 110px; }
-.cost-subtotal { width: 100px; text-align: right; font-weight: 600; color: #b8860b; font-size: 14px; }
-.cost-total {
-  margin-top: 16px;
-  padding: 16px;
-  background: linear-gradient(135deg, #fdf6ee, #f5e6d0);
-  border-radius: 12px;
-  text-align: center;
-}
-.cost-total .label { font-size: 13px; color: #888; }
-.cost-total .value { font-size: 28px; font-weight: 700; color: #b8860b; }
+  .cost-section { margin-top: 0; }
+  .cost-input { width: 90px; padding: 6px 8px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; text-align: right; }
+  .cost-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+  .cost-row:last-child { border-bottom: none; }
+  .cost-name { flex: 1; font-size: 14px; min-width: 0; }
+  .cost-kg { width: 80px; text-align: right; font-size: 13px; color: #666; flex-shrink: 0; }
+  .cost-price { width: 110px; flex-shrink: 0; }
+  .cost-subtotal { width: 100px; text-align: right; font-weight: 600; color: #b8860b; font-size: 14px; flex-shrink: 0; }
+  .cost-total { margin-top: 16px; padding: 16px; background: linear-gradient(135deg, #fdf6ee, #f5e6d0); border-radius: 12px; text-align: center; }
+  .cost-total .label { font-size: 13px; color: #888; }
+  .cost-total .value { font-size: 28px; font-weight: 700; color: #b8860b; }
 
-/* ==================== MOBILE RESPONSIVE IMPROVEMENTS ==================== */
-@media (max-width: 480px) {
-  body {
-    padding: 12px;
+  .purchase-form { display: grid; gap: 12px; margin-bottom: 16px; }
+  .purchase-form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .purchase-form-row .input-group { min-width: 120px; flex: 1; }
+  .purchase-checkbox { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #666; min-height: 44px; }
+  .purchase-checkbox input { width: 18px; height: 18px; }
+  .purchase-list { margin-top: 8px; }
+  .purchase-empty { font-size: 13px; color: #aaa; text-align: center; padding: 16px; }
+  .purchase-month { margin-bottom: 16px; }
+  .purchase-month-title { font-size: 13px; font-weight: 600; color: #888; margin-bottom: 8px; }
+  .purchase-item {
+    display: flex; align-items: flex-start; gap: 8px; padding: 10px 0; border-bottom: 1px solid #f5f5f5; position: relative;
   }
-  
-  .container {
-    max-width: 100%;
+  .purchase-item-main { flex: 1; display: flex; flex-wrap: wrap; gap: 8px 12px; font-size: 14px; align-items: center; }
+  .purchase-date { color: #999; font-size: 13px; min-width: 42px; }
+  .purchase-amount { font-weight: 600; color: #b8860b; margin-left: auto; }
+  .purchase-note { font-size: 12px; color: #aaa; width: 100%; }
+  .purchase-delete {
+    background: none; border: none; color: #ccc; font-size: 16px; cursor: pointer; padding: 8px; min-width: 44px; min-height: 44px;
   }
-  
-  h1 {
-    font-size: 22px;
+  .purchase-delete:hover { color: #c62828; }
+  .purchase-total { text-align: right; font-size: 14px; font-weight: 600; color: #555; margin-top: 8px; }
+  .purchase-hint { font-size: 13px; color: #aaa; text-align: center; padding: 16px; background: #fafafa; border-radius: 8px; margin-bottom: 16px; }
+
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100;
+    align-items: flex-end; justify-content: center; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
-  
-  .subtitle {
-    font-size: 12px;
-    margin-bottom: 16px;
+  .modal-overlay.open { display: flex; }
+  .modal-sheet {
+    background: #fff; border-radius: 16px 16px 0 0; padding: 24px; width: 100%; max-width: 500px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
   }
-  
-  .card {
-    padding: 16px;
-    margin-bottom: 12px;
-    border-radius: 10px;
+  .modal-sheet h3 { margin-bottom: 16px; font-size: 18px; }
+  .modal-actions { display: flex; gap: 12px; margin-top: 16px; }
+  .modal-actions button { flex: 1; min-height: 44px; border-radius: 8px; font-size: 15px; cursor: pointer; border: none; }
+  .modal-actions .confirm { background: #b8860b; color: #fff; }
+  .modal-actions .cancel { background: #f5f5f5; color: #555; }
+
+  .toast {
+    position: fixed; bottom: max(24px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%) translateY(80px);
+    background: #333; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 14px; z-index: 200;
+    opacity: 0; transition: all 0.3s; pointer-events: none;
   }
-  
-  .card h2 {
-    font-size: 15px;
-    margin-bottom: 12px;
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .btn-copy {
+    background: #b8860b; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 14px; cursor: pointer; min-height: 44px;
   }
-  
-  .daily-portion {
-    padding: 16px;
+
+  @media (min-width: 481px) {
+    .modal-overlay { align-items: center; }
+    .modal-sheet { border-radius: 16px; }
   }
-  
-  .daily-portion .value {
-    font-size: 36px;
+
+  @media (max-width: 480px) {
+    body { padding: 12px; padding-top: max(12px, env(safe-area-inset-top)); }
+    h1 { font-size: 22px; }
+    .card { padding: 16px; }
+    .daily-portion .value { font-size: 36px; }
+    .component { flex-wrap: wrap; }
+    .component .grams { width: 100%; text-align: left; margin-top: 0; padding-left: 48px; }
+    .cost-row { flex-wrap: wrap; }
+    .cost-name { width: 100%; }
+    .purchase-item-main { font-size: 13px; }
+    .purchase-amount { margin-left: 0; width: 100%; }
   }
-  
-  .daily-portion .unit {
-    font-size: 15px;
-  }
-  
-  .component {
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-  
-  .component .icon {
-    width: 32px;
-    height: 32px;
-    font-size: 16px;
-  }
-  
-  .component .name {
-    font-size: 13px;
-  }
-  
-  .component .desc {
-    font-size: 10px;
-  }
-  
-  .component .pct-input {
-    width: 48px;
-    padding: 5px 6px;
-    font-size: 13px;
-  }
-  
-  .component .grams {
-    font-size: 12px;
-    min-width: 52px;
-  }
-  
-  .preset-btn {
-    padding: 5px 11px;
-    font-size: 11px;
-  }
-  
-  .input-group input,
-  .input-group select {
-    padding: 9px 10px;
-    font-size: 15px;
-  }
-  
-  .cost-row {
-    gap: 8px;
-    padding: 8px 0;
-  }
-  
-  .cost-name {
-    font-size: 13px;
-  }
-  
-  .cost-kg {
-    width: 70px;
-    font-size: 12px;
-  }
-  
-  .cost-price {
-    width: 95px;
-  }
-  
-  .cost-subtotal {
-    width: 85px;
-    font-size: 13px;
-  }
-  
-  .cost-total .value {
-    font-size: 24px;
-  }
-}
 </style>
 </head>
 <body>
 <div class="container">
+  <div id="offline-banner" class="offline-banner">📡 Работаем оффлайн — данные сохранены на устройстве</div>
+  <div id="update-banner" class="update-banner">
+    <span>Доступно обновление приложения</span>
+    <button id="btn-update-app" type="button">Обновить</button>
+  </div>
+
   <h1>Калькулятор пайки</h1>
   <p class="subtitle">Натуральное питание собак — расчёт суточной порции и компонентов</p>
 
+  <div id="dog-tabs" class="dog-tabs"></div>
+
+  <div id="quick-actions" class="quick-actions">
+    <button id="btn-save-dog" class="action-btn primary" type="button">💾 Сохранить собаку</button>
+  </div>
+  <div id="dog-actions" class="dog-actions" style="display:none;">
+    <button id="btn-save-changes" class="action-btn secondary" type="button">💾 Сохранить</button>
+    <button id="btn-rename-dog" class="action-btn secondary" type="button">✏️ Имя</button>
+    <button id="btn-delete-dog" class="action-btn danger" type="button">🗑️ Удалить</button>
+  </div>
+
   <div class="card">
     <div class="collapsible-header" onclick="toggleParameters()">
-      <h2 style="margin:0; border:none; padding:0;">Параметры собаки</h2>
+      <h2 style="margin:0;border:none;padding:0;">Параметры собаки</h2>
       <span class="toggle-icon">▼</span>
     </div>
-    
-    <!-- Summary bar (shown when collapsed) -->
-    <div id="params-summary" class="summary-bar" style="display:none; margin-top:12px;">
-      <div>
-        <span class="label">Вес</span><br>
-        <span class="value" id="summary-weight">10 кг</span>
-      </div>
-      <div>
-        <span class="label">Порция в день</span><br>
-        <span class="value" id="summary-daily">300 г</span>
-      </div>
-      <div>
-        <span class="label">Кормлений</span><br>
-        <span class="value" id="summary-meals">2</span>
-      </div>
-      <div style="margin-left:auto; font-size:12px; color:#c9a87c; cursor:pointer;" onclick="toggleParameters(); event.stopImmediatePropagation();">
-        Изменить →
-      </div>
+    <div id="params-summary" class="summary-bar" style="display:none;">
+      <div><span class="label">Вес</span><br><span class="value" id="summary-weight">10 кг</span></div>
+      <div><span class="label">Порция в день</span><br><span class="value" id="summary-daily">300 г</span></div>
+      <div><span class="label">Кормлений</span><br><span class="value" id="summary-meals">2</span></div>
+      <div style="margin-left:auto;font-size:12px;color:#c9a87c;cursor:pointer;" onclick="toggleParameters();event.stopImmediatePropagation();">Изменить →</div>
     </div>
-
     <div id="params-content">
       <div class="input-row">
         <div class="input-group">
@@ -282,7 +265,6 @@
           </select>
         </div>
       </div>
-      
       <div class="input-row">
         <div class="input-group">
           <label>Кормлений в день</label>
@@ -300,362 +282,125 @@
           <input type="number" id="pctBody" min="1" max="15" step="0.5" value="3">
         </div>
       </div>
-    </div> <!-- end params-content -->
-  </div> <!-- end card -->
+    </div>
+  </div>
 
   <div class="daily-portion">
     <div class="value" id="totalGrams">300</div>
     <div class="unit">грамм в день</div>
-    <div class="per-meal" id="perMeal">60 г × 2 кормления</div>
+    <div class="per-meal" id="perMeal">150 г × 2 кормления</div>
   </div>
 
-  <div class="card" style="margin-top: 16px;">
+  <div class="card" style="margin-top:16px;">
     <h2>Соотношение компонентов</h2>
-
     <div class="preset-row">
-      <button class="preset-btn active" onclick="applyPreset('classic')">Классика 40/30/20/10</button>
-      <button class="preset-btn" onclick="applyPreset('moreOrgans')">Больше органов</button>
-      <button class="preset-btn" onclick="applyPreset('moreMeat')">Больше мяса</button>
-      <button class="preset-btn" onclick="applyPreset('custom')">Свой вариант</button>
+      <button class="preset-btn active" data-preset="classic" onclick="applyPreset('classic', this)">Классика 40/30/20/10</button>
+      <button class="preset-btn" data-preset="moreOrgans" onclick="applyPreset('moreOrgans', this)">Больше органов</button>
+      <button class="preset-btn" data-preset="moreMeat" onclick="applyPreset('moreMeat', this)">Больше мяса</button>
+      <button class="preset-btn" data-preset="custom" onclick="applyPreset('custom', this)">Свой вариант</button>
     </div>
-
     <div id="components"></div>
-
     <div class="pct-total ok" id="pctTotal">Сумма: 100%</div>
   </div>
 
-  <p class="note">Пропорции усреднённые. Подбирайте соотношение под своего питомца, ориентируясь на стул и самочувствие. Овощи не включены в расчёт (5-20% сверх пайки).</p>
+  <p class="note">Пропорции усреднённые. Подбирайте соотношение под своего питомца, ориентируясь на стул и самочувствие. Овощи не включены в расчёт (5–20% сверх пайки).</p>
 
-  <!-- Новый раздел: Расчёт на период + стоимость -->
   <div class="card cost-section">
     <h2>📅 Расчёт на период + стоимость</h2>
-    
-    <div style="margin-bottom: 16px;">
-      <label style="font-size:13px; color:#777;">Количество дней</label>
-      <input type="number" id="daysCount" value="30" min="1" max="365" step="1" 
-             style="width:120px; padding:8px 12px; border:2px solid #e0e0e0; border-radius:8px; font-size:16px;"
-             oninput="updateCostValues()">
+    <div style="margin-bottom:16px;">
+      <label style="font-size:13px;color:#777;">Количество дней</label>
+      <input type="number" id="daysCount" value="30" min="1" max="365" step="1"
+             style="width:120px;padding:8px 12px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px;">
     </div>
-
     <div id="cost-rows"></div>
-
     <div class="cost-total">
       <div class="label">ИТОГО за период</div>
       <div class="value" id="totalCost">0 ₽</div>
     </div>
-    
-    <div style="text-align:center; margin-top:12px;">
-      <button onclick="copyShoppingList()" 
-              style="background:#b8860b; color:white; border:none; padding:10px 20px; border-radius:8px; font-size:14px; cursor:pointer;">
-        📋 Скопировать список покупок
-      </button>
+    <div style="text-align:center;margin-top:12px;">
+      <button class="btn-copy" type="button" onclick="copyShoppingList()">📋 Скопировать список покупок</button>
+    </div>
+  </div>
+
+  <p id="purchase-hint" class="purchase-hint">Сохраните собаку, чтобы вести историю покупок</p>
+
+  <div id="purchase-card" class="card" style="display:none;">
+    <h2>🛒 История покупок</h2>
+    <div class="purchase-form">
+      <div class="purchase-form-row">
+        <div class="input-group">
+          <label>Дата</label>
+          <input type="date" id="purchase-date">
+        </div>
+        <div class="input-group">
+          <label>Продукт</label>
+          <select id="purchase-component">
+            <option value="meat">🥩 Мясо / обрезь</option>
+            <option value="muscle">🫀 Мышечные органы</option>
+            <option value="bone">🦴 Мясокостное</option>
+            <option value="secreting">🫁 Кроветворные органы</option>
+          </select>
+        </div>
+      </div>
+      <div class="purchase-form-row">
+        <div class="input-group">
+          <label>Количество (кг)</label>
+          <input type="number" id="purchase-kg" min="0.1" step="0.1" placeholder="5">
+        </div>
+        <div class="input-group">
+          <label>Цена (₽/кг)</label>
+          <input type="number" id="purchase-price" min="0" step="10" placeholder="350">
+        </div>
+      </div>
+      <div class="input-group">
+        <label>Комментарий (необязательно)</label>
+        <input type="text" id="purchase-note" placeholder="Адрес магазина или сайт">
+      </div>
+      <label class="purchase-checkbox">
+        <input type="checkbox" id="purchase-update-price" checked>
+        Обновить цену в расчёте
+      </label>
+      <button id="btn-add-purchase" class="action-btn primary" type="button" style="width:100%;">Добавить покупку</button>
+    </div>
+    <div id="purchase-list" class="purchase-list"></div>
+    <div id="purchase-month-total" class="purchase-total"></div>
+  </div>
+</div>
+
+<div id="save-dog-modal" class="modal-overlay">
+  <div class="modal-sheet">
+    <h3>Сохранить собаку</h3>
+    <div class="input-group">
+      <label>Кличка</label>
+      <input type="text" id="new-dog-name" placeholder="Бумер" maxlength="30">
+    </div>
+    <div class="modal-actions">
+      <button class="cancel" type="button" data-close onclick="document.getElementById('save-dog-modal').classList.remove('open')">Отмена</button>
+      <button class="confirm" type="button" id="confirm-save-dog">Сохранить</button>
     </div>
   </div>
 </div>
 
-<script>
-const COMPONENTS = [
-  { id: 'meat', name: 'Мясо / мясная обрезь', desc: 'Мякоть кусковая, птица, диафрагма, обрезь', color: '#e57373', icon: '🥩', defaultPct: 40 },
-  { id: 'muscle', name: 'Мышечные органы', desc: 'Сердце, желудки, лёгкое, рубец', color: '#f06292', icon: '🫀', defaultPct: 30 },
-  { id: 'bone', name: 'Мясокостное', desc: 'Шеи, головы, каркасы птицы, хвосты', color: '#ba68c8', icon: '🦴', defaultPct: 20 },
-  { id: 'secreting', name: 'Кроветворные органы', desc: 'Печень, почки, селезёнка', color: '#9575cd', icon: '🫁', defaultPct: 10 },
-];
-
-const PRESETS = {
-  classic: [40, 30, 20, 10],
-  moreOrgans: [30, 40, 15, 15],
-  moreMeat: [50, 20, 20, 10],
-  custom: null,
-};
-
-const AGE_RANGES = {
-  '1-3':  { min: 5, max: 8, defaultPct: 6.5, defaultMeals: 5 },
-  '3-6':  { min: 4, max: 6, defaultPct: 5,   defaultMeals: 3 },
-  '6-12': { min: 3, max: 5, defaultPct: 4,   defaultMeals: 2 },
-  '12-18':{ min: 2, max: 3, defaultPct: 2.5, defaultMeals: 2 },
-  '18+':  { min: 2, max: 3, defaultPct: 3,   defaultMeals: 2 },
-};
-
-let pcts = COMPONENTS.map(c => c.defaultPct);
-
-function init() {
-  renderComponents();
-  document.getElementById('weight').addEventListener('input', calculate);
-  document.getElementById('ageGroup').addEventListener('change', onAgeChange);
-  document.getElementById('meals').addEventListener('change', calculate);
-  document.getElementById('pctBody').addEventListener('input', calculate);
-  calculate();
-  renderCostRows();   // первый рендер секции "на период"
-}
-
-function onAgeChange() {
-  const age = document.getElementById('ageGroup').value;
-  const r = AGE_RANGES[age];
-  document.getElementById('pctBody').value = r.defaultPct;
-  document.getElementById('meals').value = r.defaultMeals;
-  calculate();
-}
-
-function toggleParameters() {
-  const content = document.getElementById('params-content');
-  const summary = document.getElementById('params-summary');
-  const header = document.querySelector('.collapsible-header');
-  
-  if (content.style.display === 'none' || content.style.display === '') {
-    content.style.display = 'block';
-    summary.style.display = 'none';
-    header.classList.remove('collapsed');
-  } else {
-    content.style.display = 'none';
-    summary.style.display = 'flex';
-    header.classList.add('collapsed');
-    updateSummaryBar();
-  }
-}
-
-function updateSummaryBar() {
-  const weight = parseFloat(document.getElementById('weight').value) || 0;
-  const pctBody = parseFloat(document.getElementById('pctBody').value) || 0;
-  const meals = parseInt(document.getElementById('meals').value) || 1;
-  const totalGrams = Math.round(weight * pctBody * 10);
-  
-  document.getElementById('summary-weight').textContent = `${weight} кг`;
-  document.getElementById('summary-daily').textContent = `${totalGrams} г`;
-  document.getElementById('summary-meals').textContent = meals;
-}
-
-function renderComponents() {
-  const wrap = document.getElementById('components');
-  wrap.innerHTML = COMPONENTS.map((c, i) => `
-    <div class="component">
-      <div class="icon" style="background:${c.color}22;color:${c.color}">${c.icon}</div>
-      <div class="info">
-        <div class="name">${c.name}</div>
-        <div class="desc">${c.desc}</div>
-        <div class="bar-wrap">
-          <div class="bar-fill" id="bar-${c.id}" style="width:${pcts[i]}%;background:${c.color}"></div>
-        </div>
-      </div>
-      <div class="pct-wrap">
-        <input class="pct-input" type="number" min="0" max="100" value="${pcts[i]}" data-idx="${i}" oninput="onPctChange(this)">
-        <span class="pct-sign">%</span>
-      </div>
-      <div class="grams" id="grams-${c.id}">0 г</div>
+<div id="rename-dog-modal" class="modal-overlay">
+  <div class="modal-sheet">
+    <h3>Переименовать</h3>
+    <div class="input-group">
+      <label>Кличка</label>
+      <input type="text" id="rename-dog-name" maxlength="30">
     </div>
-  `).join('');
-}
+    <div class="modal-actions">
+      <button class="cancel" type="button" data-close onclick="document.getElementById('rename-dog-modal').classList.remove('open')">Отмена</button>
+      <button class="confirm" type="button" id="confirm-rename-dog">Сохранить</button>
+    </div>
+  </div>
+</div>
 
-function onPctChange(el) {
-  const idx = parseInt(el.dataset.idx);
-  pcts[idx] = parseFloat(el.value) || 0;
-  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-  calculate();
-}
+<div id="toast" class="toast"></div>
 
-function applyPreset(key) {
-  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
-  if (PRESETS[key]) {
-    pcts = [...PRESETS[key]];
-    renderComponents();
-  }
-  calculate();
-}
-
-function calculate() {
-  const weight = parseFloat(document.getElementById('weight').value) || 0;
-  const pctBody = parseFloat(document.getElementById('pctBody').value) || 0;
-  const meals = parseInt(document.getElementById('meals').value) || 1;
-
-  const totalGrams = Math.round(weight * pctBody * 10); // weight * (pct/100) * 1000
-  const perMeal = Math.round(totalGrams / meals);
-
-  document.getElementById('totalGrams').textContent = totalGrams;
-  document.getElementById('perMeal').textContent = `${perMeal} г × ${meals} кормлен${meals === 1 ? 'ие' : meals < 5 ? 'ия' : 'ий'}`;
-
-  const pctSum = pcts.reduce((a, b) => a + b, 0);
-
-  COMPONENTS.forEach((c, i) => {
-    const grams = Math.round(totalGrams * pcts[i] / 100);
-    document.getElementById(`grams-${c.id}`).textContent = `${grams} г`;
-    document.getElementById(`bar-${c.id}`).style.width = `${Math.min(pcts[i], 100)}%`;
-  });
-
-  const el = document.getElementById('pctTotal');
-  el.textContent = `Сумма: ${pctSum}%`;
-  el.className = 'pct-total ' + (pctSum === 100 ? 'ok' : pctSum > 90 && pctSum < 110 ? 'warn' : 'err');
-
-  // Обновляем summary bar если он видим
-  const summary = document.getElementById('params-summary');
-  if (summary && summary.style.display !== 'none') {
-    updateSummaryBar();
-  }
-  
-  // Обновляем расчёт на период если он есть
-  if (document.getElementById('cost-rows') && costRowsRendered) {
-    updateCostValues();
-  } else if (document.getElementById('cost-rows')) {
-    renderCostRows();
-  }
-}
-
-// ==================== НОВЫЕ ФУНКЦИИ ДЛЯ РАСЧЁТА НА ПЕРИОД ====================
-
-// ==================== РАСЧЁТ НА ПЕРИОД (без потери фокуса) ====================
-
-let costRowsRendered = false;
-
-function renderCostRows() {
-  const container = document.getElementById('cost-rows');
-  if (!container) return;
-
-  const days = parseInt(document.getElementById('daysCount').value) || 30;
-  const weight = parseFloat(document.getElementById('weight').value) || 0;
-  const pctBody = parseFloat(document.getElementById('pctBody').value) || 0;
-  const totalDailyGrams = Math.round(weight * pctBody * 10);
-
-  let html = '';
-
-  COMPONENTS.forEach((c) => {
-    const dailyGrams = Math.round(totalDailyGrams * pcts[COMPONENTS.indexOf(c)] / 100);
-    const totalGrams = dailyGrams * days;
-    const totalKg = (totalGrams / 1000).toFixed(2);
-
-    html += `
-      <div class="cost-row" data-id="${c.id}">
-        <div class="cost-name">
-          <span style="font-size:16px;">${c.icon}</span> 
-          <strong>${c.name}</strong>
-        </div>
-        <div class="cost-kg" data-kg>${totalKg} кг</div>
-        <div class="cost-price">
-          <input type="number" class="cost-input price-input" 
-                 placeholder="0" step="10" data-id="${c.id}">
-          <span style="font-size:12px; color:#999;">₽/кг</span>
-        </div>
-        <div class="cost-subtotal" data-subtotal>0 ₽</div>
-      </div>
-    `;
-  });
-
-  container.innerHTML = html;
-  costRowsRendered = true;
-
-  // Добавляем один общий обработчик на контейнер (event delegation)
-  container.oninput = function(e) {
-    if (e.target.classList.contains('price-input')) {
-      updateCostValues();
-    }
-  };
-
-  // Первый расчёт значений
-  updateCostValues();
-}
-
-function updateCostValues() {
-  const days = parseInt(document.getElementById('daysCount').value) || 30;
-  const weight = parseFloat(document.getElementById('weight').value) || 0;
-  const pctBody = parseFloat(document.getElementById('pctBody').value) || 0;
-  const totalDailyGrams = Math.round(weight * pctBody * 10);
-
-  let grandTotal = 0;
-
-  COMPONENTS.forEach((c) => {
-    const dailyGrams = Math.round(totalDailyGrams * pcts[COMPONENTS.indexOf(c)] / 100);
-    const totalGrams = dailyGrams * days;
-    const totalKg = (totalGrams / 1000).toFixed(2);
-
-    const row = document.querySelector(`.cost-row[data-id="${c.id}"]`);
-    if (!row) return;
-
-    // Обновляем кг
-    const kgEl = row.querySelector('[data-kg]');
-    if (kgEl) kgEl.textContent = `${totalKg} кг`;
-
-    // Берём цену из input
-    const priceInput = row.querySelector('.price-input');
-    const price = priceInput ? (parseFloat(priceInput.value) || 0) : 0;
-
-    const subtotal = (parseFloat(totalKg) * price).toFixed(0);
-    grandTotal += parseFloat(subtotal);
-
-    // Обновляем subtotal
-    const subtotalEl = row.querySelector('[data-subtotal]');
-    if (subtotalEl) subtotalEl.textContent = `${subtotal} ₽`;
-  });
-
-  const totalEl = document.getElementById('totalCost');
-  if (totalEl) {
-    totalEl.textContent = `${Math.round(grandTotal).toLocaleString('ru-RU')} ₽`;
-  }
-}
-
-function copyShoppingList() {
-  const days = parseInt(document.getElementById('daysCount').value) || 30;
-  const weight = parseFloat(document.getElementById('weight').value) || 0;
-  const pctBody = parseFloat(document.getElementById('pctBody').value) || 0;
-  const totalDailyGrams = Math.round(weight * pctBody * 10);
-  
-  let text = `Список покупок на ${days} дней для собаки ${weight} кг\n\n`;
-  
-  COMPONENTS.forEach((c, i) => {
-    const dailyGrams = Math.round(totalDailyGrams * pcts[i] / 100);
-    const totalGrams = dailyGrams * days;
-    const totalKg = (totalGrams / 1000).toFixed(2);
-    
-    const priceInput = document.getElementById(`price-${c.id}`);
-    const price = priceInput ? (parseFloat(priceInput.value) || 0) : 0;
-    const subtotal = (parseFloat(totalKg) * price).toFixed(0);
-    
-    text += `${c.icon} ${c.name}: ${totalKg} кг`;
-    if (price > 0) text += ` — ${subtotal} ₽`;
-    text += `\n`;
-  });
-  
-  const totalCostEl = document.getElementById('totalCost');
-  text += `\nИТОГО: ${totalCostEl.textContent}`;
-  
-  navigator.clipboard.writeText(text).then(() => {
-    const originalText = event.target ? event.target.innerHTML : '';
-    const btns = document.querySelectorAll('button');
-    btns.forEach(b => {
-      if (b.innerHTML.includes('Скопировать')) {
-        const old = b.innerHTML;
-        b.innerHTML = '✅ Скопировано!';
-        setTimeout(() => { b.innerHTML = old; }, 2000);
-      }
-    });
-  }).catch(() => {
-    // Fallback
-    prompt('Скопируйте список:', text);
-  });
-}
-
-// Инициализация расчёта на период при загрузке
-document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => {
-    const daysInput = document.getElementById('daysCount');
-    if (daysInput) {
-      // daysInput уже имеет oninput="updateCostValues()" в HTML
-      // renderCostRows() вызовется автоматически при первом calculate()
-    }
-  }, 300);
-});
-
-// Регистрация Service Worker для работы оффлайн (PWA)
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(registration => {
-        console.log('ServiceWorker зарегистрирован успешно:', registration.scope);
-      })
-      .catch(error => {
-        console.log('Ошибка регистрации ServiceWorker:', error);
-      });
-  });
-}
-
-init();
+<script src="js/storage.js"></script>
+<script src="js/app.js"></script>
+<script>
+  document.getElementById('purchase-date').value = new Date().toISOString().slice(0, 10);
 </script>
 </body>
 </html>
