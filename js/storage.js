@@ -1,6 +1,18 @@
 const STORAGE_KEY = 'dogPaikaData';
 const DATA_VERSION = 1;
 
+function isMobileStorageAllowed() {
+  const standalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+  const mobileUA = /Android|iPhone|iPad|iPod|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const narrowScreen = window.matchMedia('(max-width: 768px)').matches;
+  return standalone || mobileUA || narrowScreen;
+}
+
+function canUseStorage() {
+  return isMobileStorageAllowed();
+}
+
 function generateId() {
   return crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
 }
@@ -16,6 +28,7 @@ function emptyData() {
 }
 
 function loadData() {
+  if (!canUseStorage()) return emptyData();
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return emptyData();
@@ -34,6 +47,7 @@ function loadData() {
 }
 
 function saveData(data) {
+  if (!canUseStorage()) return false;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     return true;
@@ -47,6 +61,7 @@ function getDog(data, id) {
 }
 
 function createDog(data, name, snapshot) {
+  if (!canUseStorage()) return null;
   const now = new Date().toISOString();
   const dog = {
     id: generateId(),
@@ -66,6 +81,7 @@ function createDog(data, name, snapshot) {
 }
 
 function updateDog(data, id, patch) {
+  if (!canUseStorage()) return null;
   const dog = getDog(data, id);
   if (!dog) return null;
   Object.assign(dog, patch, { updatedAt: new Date().toISOString() });
@@ -74,6 +90,7 @@ function updateDog(data, id, patch) {
 }
 
 function deleteDog(data, id) {
+  if (!canUseStorage()) return;
   data.dogs = data.dogs.filter(d => d.id !== id);
   data.purchases = data.purchases.filter(p => p.dogId !== id);
   if (data.activeDogId === id) {
@@ -87,6 +104,7 @@ function renameDog(data, id, name) {
 }
 
 function addPurchase(data, dogId, purchase) {
+  if (!canUseStorage()) return null;
   const entry = {
     id: generateId(),
     dogId,
@@ -106,6 +124,7 @@ function addPurchase(data, dogId, purchase) {
 }
 
 function deletePurchase(data, purchaseId) {
+  if (!canUseStorage()) return;
   data.purchases = data.purchases.filter(p => p.id !== purchaseId);
   saveData(data);
 }

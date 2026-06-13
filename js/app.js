@@ -77,7 +77,11 @@ function applyStateToForm() {
 }
 
 function init() {
-  if (activeDogId) {
+  if (!canUseStorage()) {
+    appData = emptyData();
+    activeTab = 'quick';
+    activeDogId = null;
+  } else if (activeDogId) {
     const dog = getDog(appData, activeDogId);
     if (dog) {
       state = applyDogToState(dog);
@@ -92,9 +96,18 @@ function init() {
   applyStateToForm();
   bindEvents();
   calculate();
+  setupMobileStorageBanner();
   setupOfflineBanner();
   setupServiceWorkerUpdate();
   applyCollapsedState();
+}
+
+function setupMobileStorageBanner() {
+  const banner = document.getElementById('mobile-storage-banner');
+  const privacy = document.getElementById('storage-privacy-note');
+  const storageOk = canUseStorage();
+  if (banner) banner.classList.toggle('show', !storageOk);
+  if (privacy) privacy.classList.toggle('show', storageOk);
 }
 
 function bindEvents() {
@@ -135,13 +148,13 @@ function onAgeChange() {
 }
 
 function scheduleAutoSave() {
-  if (activeTab !== 'dog' || !activeDogId) return;
+  if (!canUseStorage() || activeTab !== 'dog' || !activeDogId) return;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(saveCurrentDog, 500);
 }
 
 function saveCurrentDog() {
-  if (!activeDogId) return;
+  if (!canUseStorage() || !activeDogId) return;
   readFormToState();
   updateDog(appData, activeDogId, dogSnapshotFromUI(state));
   showToast('Сохранено');
@@ -151,12 +164,13 @@ function renderTabs() {
   const bar = document.getElementById('dog-tabs');
   let html = `<button class="tab-btn ${activeTab === 'quick' ? 'active' : ''}" data-tab="quick">⚡ Быстрый</button>`;
 
-  appData.dogs.forEach(dog => {
-    const active = activeTab === 'dog' && activeDogId === dog.id;
-    html += `<button class="tab-btn ${active ? 'active' : ''}" data-tab="dog" data-dog-id="${dog.id}">🐕 ${escapeHtml(dog.name)}</button>`;
-  });
-
-  html += `<button class="tab-btn tab-add" data-action="add-dog" title="Добавить собаку">+</button>`;
+  if (canUseStorage()) {
+    appData.dogs.forEach(dog => {
+      const active = activeTab === 'dog' && activeDogId === dog.id;
+      html += `<button class="tab-btn ${active ? 'active' : ''}" data-tab="dog" data-dog-id="${dog.id}">🐕 ${escapeHtml(dog.name)}</button>`;
+    });
+    html += `<button class="tab-btn tab-add" data-action="add-dog" title="Добавить собаку">+</button>`;
+  }
   bar.innerHTML = html;
 
   bar.querySelectorAll('.tab-btn').forEach(btn => {
@@ -171,6 +185,7 @@ function renderTabs() {
 }
 
 function switchTab(tab, dogId) {
+  if (!canUseStorage() && tab === 'dog') return;
   if (activeTab === 'dog' && activeDogId) {
     clearTimeout(saveTimer);
     readFormToState();
@@ -199,12 +214,22 @@ function updateDogActions() {
   const dogActions = document.getElementById('dog-actions');
   const purchaseCard = document.getElementById('purchase-card');
   const purchaseHint = document.getElementById('purchase-hint');
+  const storageOk = canUseStorage();
+
+  if (!storageOk) {
+    quickActions.style.display = 'none';
+    dogActions.style.display = 'none';
+    purchaseCard.style.display = 'none';
+    purchaseHint.style.display = 'none';
+    return;
+  }
 
   if (activeTab === 'quick') {
     quickActions.style.display = 'flex';
     dogActions.style.display = 'none';
     purchaseCard.style.display = 'none';
     purchaseHint.style.display = 'block';
+    purchaseHint.textContent = 'Сохраните собаку, чтобы вести историю покупок';
   } else {
     quickActions.style.display = 'none';
     dogActions.style.display = 'flex';
@@ -214,6 +239,10 @@ function updateDogActions() {
 }
 
 function openSaveDogModal() {
+  if (!canUseStorage()) {
+    showToast('Сохранение только на телефоне');
+    return;
+  }
   readFormToState();
   document.getElementById('new-dog-name').value = '';
   openModal('save-dog-modal');
@@ -221,9 +250,11 @@ function openSaveDogModal() {
 }
 
 function confirmSaveDog() {
+  if (!canUseStorage()) return;
   const name = document.getElementById('new-dog-name').value;
   readFormToState();
-  createDog(appData, name, dogSnapshotFromUI(state));
+  const dog = createDog(appData, name, dogSnapshotFromUI(state));
+  if (!dog) return;
   activeTab = 'dog';
   activeDogId = appData.activeDogId;
   closeModal('save-dog-modal');
@@ -565,7 +596,7 @@ function renderPurchaseSection() {
 }
 
 function addPurchaseFromForm() {
-  if (!activeDogId) return;
+  if (!canUseStorage() || !activeDogId) return;
 
   const date = document.getElementById('purchase-date').value;
   const componentId = document.getElementById('purchase-component').value;

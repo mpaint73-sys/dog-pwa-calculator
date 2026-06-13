@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dog-pwa-v2';
+const CACHE_NAME = 'dog-pwa-v4';
 const urlsToCache = [
   './',
   './index.html',
