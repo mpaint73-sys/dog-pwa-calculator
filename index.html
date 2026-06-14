@@ -12,372 +12,198 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Пайка для собак">
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Segoe UI', sans-serif;
-    background: #f5f0eb;
-    color: #333;
-    padding: 20px;
-    padding-top: max(20px, env(safe-area-inset-top));
-    padding-bottom: max(20px, env(safe-area-inset-bottom));
-    touch-action: manipulation;
-  }
-  .container { max-width: 700px; margin: 0 auto; }
-  h1 { text-align: center; margin-bottom: 8px; font-size: 24px; }
-  .subtitle { text-align: center; color: #888; margin-bottom: 16px; font-size: 13px; }
-
-  .offline-banner, .update-banner, .mobile-storage-banner {
-    display: none;
-    text-align: center;
-    padding: 8px 12px;
-    font-size: 13px;
-    border-radius: 8px;
-    margin-bottom: 12px;
-  }
-  .offline-banner.show { display: block; background: #fff3e0; color: #e65100; }
-  .mobile-storage-banner.show { display: block; background: #f3e5f5; color: #6a1b9a; }
-  .storage-privacy-note {
-    display: none;
-    text-align: center;
-    font-size: 12px;
-    color: #888;
-    margin-bottom: 12px;
-    padding: 0 8px;
-    line-height: 1.4;
-  }
-  .storage-privacy-note.show { display: block; }
-  .update-banner.show { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; background: #e3f2fd; color: #1565c0; }
-  .update-banner button {
-    background: #1565c0; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; min-height: 44px;
-  }
-
-  .dog-tabs {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    margin-bottom: 16px;
-    padding-bottom: 4px;
-  }
-  .dog-tabs::-webkit-scrollbar { height: 4px; }
-  .tab-btn {
-    flex-shrink: 0;
-    scroll-snap-align: start;
-    padding: 10px 16px;
-    border: 2px solid #e0e0e0;
-    border-radius: 20px;
-    background: #fff;
-    font-size: 14px;
-    cursor: pointer;
-    min-height: 44px;
-    white-space: nowrap;
-    transition: all 0.2s;
-  }
-  .tab-btn.active { border-color: #b8860b; background: #fdf6ee; font-weight: 600; color: #8b6914; }
-  .tab-btn.tab-add { font-size: 20px; padding: 8px 18px; font-weight: 600; }
-
-  .dog-actions, .quick-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-  }
-  .action-btn {
-    padding: 10px 16px;
-    border-radius: 8px;
-    font-size: 13px;
-    cursor: pointer;
-    min-height: 44px;
-    border: none;
-  }
-  .action-btn.primary { background: #b8860b; color: #fff; }
-  .action-btn.secondary { background: #fff; border: 2px solid #e0e0e0; color: #555; }
-  .action-btn.danger { background: #fff; border: 2px solid #ffcdd2; color: #c62828; }
-
-  .card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-  .card h2 { font-size: 16px; margin-bottom: 16px; color: #555; border-bottom: 1px solid #eee; padding-bottom: 8px; }
-  .input-row { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
-  .input-group { flex: 1; min-width: 200px; }
-  .input-group label { display: block; font-size: 13px; color: #777; margin-bottom: 4px; }
-  .input-group input, .input-group select {
-    width: 100%; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; transition: border-color 0.2s;
-  }
-  .input-group input:focus, .input-group select:focus { outline: none; border-color: #c9a87c; }
-
-  .daily-portion { text-align: center; padding: 20px; background: linear-gradient(135deg, #fdf6ee, #f5e6d0); border-radius: 12px; }
-  .daily-portion .value { font-size: 42px; font-weight: 700; color: #b8860b; }
-  .daily-portion .unit { font-size: 16px; color: #999; }
-  .daily-portion .per-meal { font-size: 14px; color: #888; margin-top: 4px; }
-
-  .component { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
-  .component .icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; margin-top: 2px; }
-  .component .info { flex: 1; min-width: 0; }
-  .component .name { font-size: 14px; font-weight: 600; }
-  .component .desc { font-size: 11px; color: #999; margin-bottom: 6px; }
-  .slider-row { margin-bottom: 4px; }
-  .pct-slider { width: 100%; height: 28px; cursor: pointer; }
-  .component .pct-wrap { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-top: 4px; }
-  .component .pct-input { width: 52px; padding: 6px 8px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; font-weight: 600; text-align: center; }
-  .component .pct-input:focus { outline: none; border-color: #c9a87c; }
-  .component .pct-sign { color: #aaa; font-size: 14px; }
-  .component .grams { font-size: 13px; color: #b8860b; font-weight: 600; min-width: 60px; text-align: right; flex-shrink: 0; margin-top: 8px; }
-
-  .pct-total { text-align: center; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 600; }
-  .pct-total.ok { background: #e8f5e9; color: #2e7d32; }
-  .pct-total.warn { background: #fff3e0; color: #e65100; }
-  .pct-total.err { background: #fce4ec; color: #c62828; }
-
-  .preset-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-  .preset-btn { padding: 8px 14px; border: 2px solid #e0e0e0; border-radius: 20px; background: #fff; cursor: pointer; font-size: 12px; transition: all 0.2s; min-height: 44px; }
-  .preset-btn:hover { border-color: #c9a87c; background: #fdf6ee; }
-  .preset-btn.active { border-color: #c9a87c; background: #fdf6ee; font-weight: 600; }
-
-  .note { font-size: 11px; color: #aaa; text-align: center; margin-top: 8px; }
-
-  .collapsible-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; min-height: 44px; }
-  .collapsible-header .toggle-icon { transition: transform 0.2s; font-size: 18px; }
-  .collapsible-header.collapsed .toggle-icon { transform: rotate(-90deg); }
-  .summary-bar {
-    background: #fdf6ee; border: 1px solid #e8d9c0; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; margin-top: 12px;
-    font-size: 14px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
-  }
-  .summary-bar .label { color: #888; font-size: 12px; }
-  .summary-bar .value { font-weight: 600; color: #b8860b; }
-
-  .cost-section { margin-top: 0; }
-  .cost-input { width: 90px; padding: 6px 8px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; text-align: right; }
-  .cost-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
-  .cost-row:last-child { border-bottom: none; }
-  .cost-name { flex: 1; font-size: 14px; min-width: 0; }
-  .cost-kg { width: 80px; text-align: right; font-size: 13px; color: #666; flex-shrink: 0; }
-  .cost-price { width: 110px; flex-shrink: 0; }
-  .cost-subtotal { width: 100px; text-align: right; font-weight: 600; color: #b8860b; font-size: 14px; flex-shrink: 0; }
-  .cost-total { margin-top: 16px; padding: 16px; background: linear-gradient(135deg, #fdf6ee, #f5e6d0); border-radius: 12px; text-align: center; }
-  .cost-total .label { font-size: 13px; color: #888; }
-  .cost-total .value { font-size: 28px; font-weight: 700; color: #b8860b; }
-
-  .purchase-form { display: grid; gap: 12px; margin-bottom: 16px; }
-  .purchase-form-row { display: flex; gap: 12px; flex-wrap: wrap; }
-  .purchase-form-row .input-group { min-width: 120px; flex: 1; }
-  .purchase-checkbox { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #666; min-height: 44px; }
-  .purchase-checkbox input { width: 18px; height: 18px; }
-  .purchase-list { margin-top: 8px; }
-  .purchase-empty { font-size: 13px; color: #aaa; text-align: center; padding: 16px; }
-  .purchase-month { margin-bottom: 16px; }
-  .purchase-month-title { font-size: 13px; font-weight: 600; color: #888; margin-bottom: 8px; }
-  .purchase-item {
-    display: flex; align-items: flex-start; gap: 8px; padding: 10px 0; border-bottom: 1px solid #f5f5f5; position: relative;
-  }
-  .purchase-item-main { flex: 1; display: flex; flex-wrap: wrap; gap: 8px 12px; font-size: 14px; align-items: center; }
-  .purchase-date { color: #999; font-size: 13px; min-width: 42px; }
-  .purchase-amount { font-weight: 600; color: #b8860b; margin-left: auto; }
-  .purchase-note { font-size: 12px; color: #aaa; width: 100%; }
-  .purchase-delete {
-    background: none; border: none; color: #ccc; font-size: 16px; cursor: pointer; padding: 8px; min-width: 44px; min-height: 44px;
-  }
-  .purchase-delete:hover { color: #c62828; }
-  .purchase-total { text-align: right; font-size: 14px; font-weight: 600; color: #555; margin-top: 8px; }
-  .purchase-hint { font-size: 13px; color: #aaa; text-align: center; padding: 16px; background: #fafafa; border-radius: 8px; margin-bottom: 16px; }
-
-  .modal-overlay {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100;
-    align-items: flex-end; justify-content: center; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-  }
-  .modal-overlay.open { display: flex; }
-  .modal-sheet {
-    background: #fff; border-radius: 16px 16px 0 0; padding: 24px; width: 100%; max-width: 500px;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
-  }
-  .modal-sheet h3 { margin-bottom: 16px; font-size: 18px; }
-  .modal-actions { display: flex; gap: 12px; margin-top: 16px; }
-  .modal-actions button { flex: 1; min-height: 44px; border-radius: 8px; font-size: 15px; cursor: pointer; border: none; }
-  .modal-actions .confirm { background: #b8860b; color: #fff; }
-  .modal-actions .cancel { background: #f5f5f5; color: #555; }
-
-  .toast {
-    position: fixed; bottom: max(24px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%) translateY(80px);
-    background: #333; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 14px; z-index: 200;
-    opacity: 0; transition: all 0.3s; pointer-events: none;
-  }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-  .btn-copy {
-    background: #b8860b; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 14px; cursor: pointer; min-height: 44px;
-  }
-
-  @media (min-width: 481px) {
-    .modal-overlay { align-items: center; }
-    .modal-sheet { border-radius: 16px; }
-  }
-
-  @media (max-width: 480px) {
-    body { padding: 12px; padding-top: max(12px, env(safe-area-inset-top)); }
-    h1 { font-size: 22px; }
-    .card { padding: 16px; }
-    .daily-portion .value { font-size: 36px; }
-    .component { flex-wrap: wrap; }
-    .component .grams { width: 100%; text-align: left; margin-top: 0; padding-left: 48px; }
-    .cost-row { flex-wrap: wrap; }
-    .cost-name { width: 100%; }
-    .purchase-item-main { font-size: 13px; }
-    .purchase-amount { margin-left: 0; width: 100%; }
-  }
-</style>
+<script>
+(function () {
+  try {
+    var t = localStorage.getItem('dogPaikaTheme');
+    var themes = ['light', 'dark', 'lavender', 'pistachio'];
+    if (!themes.includes(t)) {
+      t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* ignore */ }
+})();
+</script>
+<link rel="stylesheet" href="css/themes.css">
+<link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 <div class="container">
-  <div id="mobile-storage-banner" class="mobile-storage-banner">💻 На компьютере доступен только быстрый расчёт. Сохранение собак — на телефоне.</div>
-  <div id="storage-privacy-note" class="storage-privacy-note">🔒 Ваши собаки хранятся только на этом телефоне — другие пользователи по ссылке их не видят</div>
-  <div id="offline-banner" class="offline-banner">📡 Работаем оффлайн — данные сохранены на этом устройстве</div>
-  <div id="update-banner" class="update-banner">
-    <span>Доступно обновление приложения</span>
-    <button id="btn-update-app" type="button">Обновить</button>
-  </div>
-
-  <h1>Калькулятор пайки</h1>
-  <p class="subtitle">Натуральное питание собак — расчёт суточной порции и компонентов</p>
-
-  <div id="dog-tabs" class="dog-tabs"></div>
-
-  <div id="quick-actions" class="quick-actions">
-    <button id="btn-save-dog" class="action-btn primary" type="button">💾 Сохранить собаку</button>
-  </div>
-  <div id="dog-actions" class="dog-actions" style="display:none;">
-    <button id="btn-save-changes" class="action-btn secondary" type="button">💾 Сохранить</button>
-    <button id="btn-rename-dog" class="action-btn secondary" type="button">✏️ Имя</button>
-    <button id="btn-delete-dog" class="action-btn danger" type="button">🗑️ Удалить</button>
-  </div>
-
-  <div class="card">
-    <div class="collapsible-header" onclick="toggleParameters()">
-      <h2 style="margin:0;border:none;padding:0;">Параметры собаки</h2>
-      <span class="toggle-icon">▼</span>
-    </div>
-    <div id="params-summary" class="summary-bar" style="display:none;">
-      <div><span class="label">Вес</span><br><span class="value" id="summary-weight">10 кг</span></div>
-      <div><span class="label">Порция в день</span><br><span class="value" id="summary-daily">300 г</span></div>
-      <div><span class="label">Кормлений</span><br><span class="value" id="summary-meals">2</span></div>
-      <div style="margin-left:auto;font-size:12px;color:#c9a87c;cursor:pointer;" onclick="toggleParameters();event.stopImmediatePropagation();">Изменить →</div>
-    </div>
-    <div id="params-content">
-      <div class="input-row">
-        <div class="input-group">
-          <label>Вес собаки (кг)</label>
-          <input type="number" id="weight" min="0.5" max="100" step="0.5" value="10">
-        </div>
-        <div class="input-group">
-          <label>Возраст</label>
-          <select id="ageGroup">
-            <option value="1-3">1–3 месяца</option>
-            <option value="3-6">3–6 месяцев</option>
-            <option value="6-12">6–12 месяцев</option>
-            <option value="12-18">12–18 месяцев</option>
-            <option value="18+" selected>18+ месяцев (взрослая)</option>
-          </select>
-        </div>
-      </div>
-      <div class="input-row">
-        <div class="input-group">
-          <label>Кормлений в день</label>
-          <select id="meals">
-            <option value="6">6</option>
-            <option value="5">5</option>
-            <option value="4">4</option>
-            <option value="3">3</option>
-            <option value="2" selected>2</option>
-            <option value="1">1</option>
-          </select>
-        </div>
-        <div class="input-group">
-          <label>% от веса тела</label>
-          <input type="number" id="pctBody" min="1" max="15" step="0.5" value="3">
-        </div>
+  <header class="app-header">
+    <div class="app-header__top">
+      <div>
+        <h1 class="app-title">Калькулятор пайки</h1>
+        <p class="subtitle">Натуральное питание — суточная порция и компоненты</p>
       </div>
     </div>
-  </div>
-
-  <div class="daily-portion">
-    <div class="value" id="totalGrams">300</div>
-    <div class="unit">грамм в день</div>
-    <div class="per-meal" id="perMeal">150 г × 2 кормления</div>
-  </div>
-
-  <div class="card" style="margin-top:16px;">
-    <h2>Соотношение компонентов</h2>
-    <div class="preset-row">
-      <button class="preset-btn active" data-preset="classic" onclick="applyPreset('classic', this)">Классика 40/30/20/10</button>
-      <button class="preset-btn" data-preset="moreOrgans" onclick="applyPreset('moreOrgans', this)">Больше органов</button>
-      <button class="preset-btn" data-preset="moreMeat" onclick="applyPreset('moreMeat', this)">Больше мяса</button>
-      <button class="preset-btn" data-preset="custom" onclick="applyPreset('custom', this)">Свой вариант</button>
+    <div class="theme-switcher" role="group" aria-label="Тема оформления">
+      <button type="button" class="theme-chip" data-theme="light" aria-pressed="false">
+        <span class="theme-chip__dot theme-chip__dot--light" aria-hidden="true"></span>
+        Светлая
+      </button>
+      <button type="button" class="theme-chip" data-theme="dark" aria-pressed="false">
+        <span class="theme-chip__dot theme-chip__dot--dark" aria-hidden="true"></span>
+        Тёмная
+      </button>
+      <button type="button" class="theme-chip" data-theme="lavender" aria-pressed="false">
+        <span class="theme-chip__dot theme-chip__dot--lavender" aria-hidden="true"></span>
+        Лаванда
+      </button>
+      <button type="button" class="theme-chip" data-theme="pistachio" aria-pressed="false">
+        <span class="theme-chip__dot theme-chip__dot--pistachio" aria-hidden="true"></span>
+        Фисташка
+      </button>
     </div>
-    <div id="components"></div>
-    <div class="pct-total ok" id="pctTotal">Сумма: 100%</div>
-  </div>
+  </header>
 
-  <p class="note">Пропорции усреднённые. Подбирайте соотношение под своего питомца, ориентируясь на стул и самочувствие. Овощи не включены в расчёт (5–20% сверх пайки).</p>
-
-  <div class="card cost-section">
-    <h2>📅 Расчёт на период + стоимость</h2>
-    <div style="margin-bottom:16px;">
-      <label style="font-size:13px;color:#777;">Количество дней</label>
-      <input type="number" id="daysCount" value="30" min="1" max="365" step="1"
-             style="width:120px;padding:8px 12px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px;">
+  <main class="main-content">
+    <div id="mobile-storage-banner" class="mobile-storage-banner">💻 На компьютере доступен только быстрый расчёт. Сохранение собак — на телефоне.</div>
+    <div id="storage-privacy-note" class="storage-privacy-note">🔒 Ваши собаки хранятся только на этом телефоне — другие пользователи по ссылке их не видят</div>
+    <div id="offline-banner" class="offline-banner">📡 Работаем оффлайн — данные сохранены на этом устройстве</div>
+    <div id="update-banner" class="update-banner">
+      <span>Доступно обновление приложения</span>
+      <button id="btn-update-app" type="button">Обновить</button>
     </div>
-    <div id="cost-rows"></div>
-    <div class="cost-total">
-      <div class="label">ИТОГО за период</div>
-      <div class="value" id="totalCost">0 ₽</div>
-    </div>
-    <div style="text-align:center;margin-top:12px;">
-      <button class="btn-copy" type="button" onclick="copyShoppingList()">📋 Скопировать список покупок</button>
-    </div>
-  </div>
 
-  <p id="purchase-hint" class="purchase-hint">Сохраните собаку, чтобы вести историю покупок</p>
+    <div id="dog-tabs" class="dog-tabs"></div>
 
-  <div id="purchase-card" class="card" style="display:none;">
-    <h2>🛒 История покупок</h2>
-    <div class="purchase-form">
-      <div class="purchase-form-row">
-        <div class="input-group">
-          <label>Дата</label>
-          <input type="date" id="purchase-date">
+    <div id="quick-actions" class="quick-actions">
+      <button id="btn-save-dog" class="action-btn primary" type="button">💾 Сохранить собаку</button>
+    </div>
+    <div id="dog-actions" class="dog-actions" style="display:none;">
+      <button id="btn-save-changes" class="action-btn secondary" type="button">💾 Сохранить</button>
+      <button id="btn-rename-dog" class="action-btn secondary" type="button">✏️ Имя</button>
+      <button id="btn-delete-dog" class="action-btn danger" type="button">🗑️ Удалить</button>
+    </div>
+
+    <div class="card">
+      <div class="collapsible-header" onclick="toggleParameters()">
+        <h2>Параметры собаки</h2>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div id="params-summary" class="summary-bar" style="display:none;">
+        <div><span class="label">Вес</span><br><span class="value" id="summary-weight">10 кг</span></div>
+        <div><span class="label">Порция</span><br><span class="value" id="summary-daily">300 г</span></div>
+        <div><span class="label">Кормлений</span><br><span class="value" id="summary-meals">2</span></div>
+        <div class="summary-bar__edit" onclick="toggleParameters();event.stopImmediatePropagation();">Изменить →</div>
+      </div>
+      <div id="params-content">
+        <div class="input-row">
+          <div class="input-group">
+            <label>Вес собаки (кг)</label>
+            <input type="number" id="weight" min="0.5" max="100" step="0.5" value="10" inputmode="decimal">
+          </div>
+          <div class="input-group">
+            <label>Возраст</label>
+            <select id="ageGroup">
+              <option value="1-3">1–3 месяца</option>
+              <option value="3-6">3–6 месяцев</option>
+              <option value="6-12">6–12 месяцев</option>
+              <option value="12-18">12–18 месяцев</option>
+              <option value="18+" selected>18+ месяцев (взрослая)</option>
+            </select>
+          </div>
         </div>
-        <div class="input-group">
-          <label>Продукт</label>
-          <select id="purchase-component">
-            <option value="meat">🥩 Мясо / обрезь</option>
-            <option value="muscle">🫀 Мышечные органы</option>
-            <option value="bone">🦴 Мясокостное</option>
-            <option value="secreting">🫁 Кроветворные органы</option>
-          </select>
+        <div class="input-row">
+          <div class="input-group">
+            <label>Кормлений в день</label>
+            <select id="meals">
+              <option value="6">6</option>
+              <option value="5">5</option>
+              <option value="4">4</option>
+              <option value="3">3</option>
+              <option value="2" selected>2</option>
+              <option value="1">1</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>% от веса тела</label>
+            <input type="number" id="pctBody" min="1" max="15" step="0.5" value="3" inputmode="decimal">
+          </div>
         </div>
       </div>
-      <div class="purchase-form-row">
-        <div class="input-group">
-          <label>Количество (кг)</label>
-          <input type="number" id="purchase-kg" min="0.1" step="0.1" placeholder="5">
-        </div>
-        <div class="input-group">
-          <label>Цена (₽/кг)</label>
-          <input type="number" id="purchase-price" min="0" step="10" placeholder="350">
-        </div>
-      </div>
-      <div class="input-group">
-        <label>Комментарий (необязательно)</label>
-        <input type="text" id="purchase-note" placeholder="Адрес магазина или сайт">
-      </div>
-      <label class="purchase-checkbox">
-        <input type="checkbox" id="purchase-update-price" checked>
-        Обновить цену в расчёте
-      </label>
-      <button id="btn-add-purchase" class="action-btn primary" type="button" style="width:100%;">Добавить покупку</button>
     </div>
-    <div id="purchase-list" class="purchase-list"></div>
-    <div id="purchase-month-total" class="purchase-total"></div>
-  </div>
+
+    <div class="daily-portion">
+      <div class="value" id="totalGrams">300</div>
+      <div class="unit">грамм в день</div>
+      <div class="per-meal" id="perMeal">150 г × 2 кормления</div>
+    </div>
+
+    <div class="card card--spaced">
+      <h2>Соотношение компонентов</h2>
+      <div class="preset-row">
+        <button class="preset-btn active" data-preset="classic" onclick="applyPreset('classic', this)">Классика 40/30/20/10</button>
+        <button class="preset-btn" data-preset="moreOrgans" onclick="applyPreset('moreOrgans', this)">Больше органов</button>
+        <button class="preset-btn" data-preset="moreMeat" onclick="applyPreset('moreMeat', this)">Больше мяса</button>
+        <button class="preset-btn" data-preset="custom" onclick="applyPreset('custom', this)">Свой вариант</button>
+      </div>
+      <div id="components"></div>
+      <div class="pct-total ok" id="pctTotal">Сумма: 100%</div>
+    </div>
+
+    <p class="note">Пропорции усреднённые. Подбирайте соотношение под своего питомца, ориентируясь на стул и самочувствие. Овощи не включены в расчёт (5–20% сверх пайки).</p>
+
+    <div class="card cost-section">
+      <h2>📅 Расчёт на период + стоимость</h2>
+      <div class="days-field">
+        <label for="daysCount">Количество дней</label>
+        <input type="number" id="daysCount" class="input-inline" value="30" min="1" max="365" step="1" inputmode="numeric">
+      </div>
+      <div id="cost-rows"></div>
+      <div class="cost-total">
+        <div class="label">ИТОГО за период</div>
+        <div class="value" id="totalCost">0 ₽</div>
+      </div>
+      <div class="btn-copy-wrap">
+        <button class="btn-copy" type="button" onclick="copyShoppingList()">📋 Скопировать список покупок</button>
+      </div>
+    </div>
+
+    <p id="purchase-hint" class="purchase-hint">Сохраните собаку, чтобы вести историю покупок</p>
+
+    <div id="purchase-card" class="card" style="display:none;">
+      <h2>🛒 История покупок</h2>
+      <div class="purchase-form">
+        <div class="purchase-form-row">
+          <div class="input-group">
+            <label>Дата</label>
+            <input type="date" id="purchase-date">
+          </div>
+          <div class="input-group">
+            <label>Продукт</label>
+            <select id="purchase-component">
+              <option value="meat">🥩 Мясо / обрезь</option>
+              <option value="muscle">🫀 Мышечные органы</option>
+              <option value="bone">🦴 Мясокостное</option>
+              <option value="secreting">🫁 Кроветворные органы</option>
+            </select>
+          </div>
+        </div>
+        <div class="purchase-form-row">
+          <div class="input-group">
+            <label>Количество (кг)</label>
+            <input type="number" id="purchase-kg" min="0.1" step="0.1" placeholder="5" inputmode="decimal">
+          </div>
+          <div class="input-group">
+            <label>Цена (₽/кг)</label>
+            <input type="number" id="purchase-price" min="0" step="10" placeholder="350" inputmode="numeric">
+          </div>
+        </div>
+        <div class="input-group">
+          <label>Комментарий (необязательно)</label>
+          <input type="text" id="purchase-note" placeholder="Адрес магазина или сайт">
+        </div>
+        <label class="purchase-checkbox">
+          <input type="checkbox" id="purchase-update-price" checked>
+          Обновить цену в расчёте
+        </label>
+        <button id="btn-add-purchase" class="action-btn primary" type="button" style="width:100%;">Добавить покупку</button>
+      </div>
+      <div id="purchase-list" class="purchase-list"></div>
+      <div id="purchase-month-total" class="purchase-total"></div>
+    </div>
+  </main>
 </div>
 
 <div id="save-dog-modal" class="modal-overlay">
@@ -410,6 +236,7 @@
 
 <div id="toast" class="toast"></div>
 
+<script src="js/theme.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/app.js"></script>
 <script>

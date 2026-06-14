@@ -1,0 +1,22 @@
+{
+  "appId": "com.dogpwa.calculator",
+  "appName": "Калькулятор пайки для собак",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "launchAutoHide": true,
+      "backgroundColor": "#f5f0eb",
+      "androidSplashResourceName": "splash",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#b8860b"
+    }
+  }
+}

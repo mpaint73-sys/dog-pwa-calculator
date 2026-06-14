@@ -446,13 +446,18 @@ function renderCostRows() {
     const price = state.costPrices[c.id] || '';
     return `
       <div class="cost-row" data-id="${c.id}">
-        <div class="cost-name"><span style="font-size:16px;">${c.icon}</span> <strong>${c.name}</strong></div>
-        <div class="cost-kg" data-kg>${totalKg} кг</div>
-        <div class="cost-price">
-          <input type="number" class="cost-input price-input" placeholder="0" step="10" data-id="${c.id}" value="${price || ''}">
-          <span style="font-size:12px;color:#999;">₽/кг</span>
+        <div class="cost-header">
+          <span class="cost-icon">${c.icon}</span>
+          <span class="cost-name">${c.name}</span>
         </div>
-        <div class="cost-subtotal" data-subtotal>0 ₽</div>
+        <div class="cost-details">
+          <span class="cost-kg" data-kg>${totalKg} кг</span>
+          <div class="cost-price">
+            <input type="number" class="cost-input price-input" placeholder="0" step="10" inputmode="numeric" data-id="${c.id}" value="${price || ''}">
+            <span class="cost-unit">₽/кг</span>
+          </div>
+          <span class="cost-subtotal" data-subtotal>0 ₽</span>
+        </div>
       </div>`;
   }).join('');
 
@@ -489,7 +494,7 @@ function updateCostValues() {
     grandTotal += parseFloat(subtotal);
 
     const subtotalEl = row.querySelector('[data-subtotal]');
-    if (subtotalEl) subtotalEl.textContent = `${subtotal} ₽`;
+    if (subtotalEl) subtotalEl.textContent = `${parseInt(subtotal, 10).toLocaleString('ru-RU')} ₽`;
   });
 
   const totalEl = document.getElementById('totalCost');

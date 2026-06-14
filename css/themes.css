@@ -1,0 +1,219 @@
+/* Typography & iPhone 13 baseline (390×844) */
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+
+  --text-xs: 0.6875rem;
+  --text-sm: 0.8125rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.375rem;
+  --text-hero: clamp(2.25rem, 10vw, 2.75rem);
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.45;
+  --leading-relaxed: 1.55;
+
+  --tracking-tight: -0.02em;
+  --tracking-wide: 0.04em;
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+  --radius-pill: 999px;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.1);
+
+  --touch-min: 44px;
+  --content-max: 390px;
+  --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* Light (default warm) */
+:root,
+[data-theme="light"] {
+  --bg: #f7f4ef;
+  --bg-subtle: #efeae3;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --text: #1a1a1c;
+  --text-secondary: #636366;
+  --text-tertiary: #aeaeb2;
+  --accent: #b8860b;
+  --accent-text: #ffffff;
+  --accent-soft: #fdf6ee;
+  --accent-muted: #e8d9c0;
+  --accent-gradient: linear-gradient(145deg, #fdf6ee 0%, #f0e0c8 100%);
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
+  --input-bg: #ffffff;
+  --overlay: rgba(0, 0, 0, 0.45);
+  --toast-bg: #1a1a1c;
+  --toast-text: #ffffff;
+  --banner-offline-bg: #fff3e0;
+  --banner-offline-text: #bf360c;
+  --banner-storage-bg: #f3e5f5;
+  --banner-storage-text: #6a1b9a;
+  --banner-update-bg: #e3f2fd;
+  --banner-update-text: #0d47a1;
+  --banner-update-btn: #1565c0;
+  --status-ok-bg: #e8f5e9;
+  --status-ok-text: #2e7d32;
+  --status-warn-bg: #fff3e0;
+  --status-warn-text: #e65100;
+  --status-err-bg: #fce4ec;
+  --status-err-text: #c62828;
+  --danger-border: #ffcdd2;
+  --danger-text: #c62828;
+  --slider-track: var(--bg-subtle);
+  --chip-bg: var(--surface);
+  --chip-active-bg: var(--accent-soft);
+  --chip-active-border: var(--accent);
+  --chip-active-text: #7a5c0a;
+  --link: var(--accent);
+  --hint-bg: var(--bg-subtle);
+}
+
+[data-theme="dark"] {
+  --bg: #0d0d0f;
+  --bg-subtle: #1c1c1e;
+  --surface: #1c1c1e;
+  --surface-raised: #2c2c2e;
+  --text: #f5f5f7;
+  --text-secondary: #98989d;
+  --text-tertiary: #636366;
+  --accent: #d4a853;
+  --accent-text: #1a1408;
+  --accent-soft: #2a2418;
+  --accent-muted: #4a3d28;
+  --accent-gradient: linear-gradient(145deg, #2a2418 0%, #1f1a12 100%);
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --input-bg: #2c2c2e;
+  --overlay: rgba(0, 0, 0, 0.65);
+  --toast-bg: #f5f5f7;
+  --toast-text: #1a1a1c;
+  --banner-offline-bg: #3d2e14;
+  --banner-offline-text: #ffb74d;
+  --banner-storage-bg: #2d1f3d;
+  --banner-storage-text: #ce93d8;
+  --banner-update-bg: #0d2137;
+  --banner-update-text: #90caf9;
+  --banner-update-btn: #1976d2;
+  --status-ok-bg: #1b3320;
+  --status-ok-text: #81c784;
+  --status-warn-bg: #3d2e14;
+  --status-warn-text: #ffb74d;
+  --status-err-bg: #3d1a24;
+  --status-err-text: #ef9a9a;
+  --danger-border: #5c2020;
+  --danger-text: #ef5350;
+  --slider-track: #3a3a3c;
+  --chip-bg: var(--surface-raised);
+  --chip-active-bg: var(--accent-soft);
+  --chip-active-border: var(--accent);
+  --chip-active-text: var(--accent);
+  --link: var(--accent);
+  --hint-bg: var(--bg-subtle);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="lavender"] {
+  --bg: #f5f0fa;
+  --bg-subtle: #ebe3f5;
+  --surface: #ffffff;
+  --surface-raised: #faf8fd;
+  --text: #2d2640;
+  --text-secondary: #6b5f80;
+  --text-tertiary: #a89bb8;
+  --accent: #8b6bae;
+  --accent-text: #ffffff;
+  --accent-soft: #ede5f7;
+  --accent-muted: #d4c4e8;
+  --accent-gradient: linear-gradient(145deg, #f0e8fa 0%, #ddd0f0 100%);
+  --border: rgba(107, 91, 142, 0.12);
+  --border-strong: rgba(107, 91, 142, 0.22);
+  --input-bg: #ffffff;
+  --overlay: rgba(45, 38, 64, 0.45);
+  --toast-bg: #2d2640;
+  --toast-text: #f5f0fa;
+  --banner-offline-bg: #f3e8ff;
+  --banner-offline-text: #7c3aed;
+  --banner-storage-bg: #ede5f7;
+  --banner-storage-text: #6b21a8;
+  --banner-update-bg: #ede9fe;
+  --banner-update-text: #5b21b6;
+  --banner-update-btn: #7c3aed;
+  --status-ok-bg: #ecfdf5;
+  --status-ok-text: #059669;
+  --status-warn-bg: #fef3c7;
+  --status-warn-text: #d97706;
+  --status-err-bg: #fce7f3;
+  --status-err-text: #db2777;
+  --danger-border: #f9a8d4;
+  --danger-text: #be185d;
+  --slider-track: #ebe3f5;
+  --chip-bg: var(--surface);
+  --chip-active-bg: var(--accent-soft);
+  --chip-active-border: var(--accent);
+  --chip-active-text: #5c4a78;
+  --link: var(--accent);
+  --hint-bg: var(--accent-soft);
+}
+
+[data-theme="pistachio"] {
+  --bg: #f2f7f0;
+  --bg-subtle: #e3efe0;
+  --surface: #ffffff;
+  --surface-raised: #f8fbf7;
+  --text: #1e2e1c;
+  --text-secondary: #4a5f47;
+  --text-tertiary: #8a9e87;
+  --accent: #6b9e5a;
+  --accent-text: #ffffff;
+  --accent-soft: #e3f0df;
+  --accent-muted: #b8d4b0;
+  --accent-gradient: linear-gradient(145deg, #e8f3e4 0%, #c8dfc0 100%);
+  --border: rgba(74, 95, 71, 0.12);
+  --border-strong: rgba(74, 95, 71, 0.22);
+  --input-bg: #ffffff;
+  --overlay: rgba(30, 46, 28, 0.45);
+  --toast-bg: #1e2e1c;
+  --toast-text: #f2f7f0;
+  --banner-offline-bg: #fef9c3;
+  --banner-offline-text: #a16207;
+  --banner-storage-bg: #dcfce7;
+  --banner-storage-text: #166534;
+  --banner-update-bg: #ecfccb;
+  --banner-update-text: #3f6212;
+  --banner-update-btn: #65a30d;
+  --status-ok-bg: #dcfce7;
+  --status-ok-text: #15803d;
+  --status-warn-bg: #fef9c3;
+  --status-warn-text: #a16207;
+  --status-err-bg: #fee2e2;
+  --status-err-text: #b91c1c;
+  --danger-border: #fca5a5;
+  --danger-text: #dc2626;
+  --slider-track: #e3efe0;
+  --chip-bg: var(--surface);
+  --chip-active-bg: var(--accent-soft);
+  --chip-active-border: var(--accent);
+  --chip-active-text: #3d6b32;
+  --link: var(--accent);
+  --hint-bg: var(--accent-soft);
+}

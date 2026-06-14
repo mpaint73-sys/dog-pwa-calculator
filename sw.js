@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dog-pwa-v4';
+const CACHE_NAME = 'dog-pwa-v5';
 const urlsToCache = [
   './',
   './index.html',
@@ -6,6 +6,9 @@ const urlsToCache = [
   './icon-192.png',
   './icon-512.png',
   './splash-bullterrier.jpg',
+  './css/themes.css',
+  './css/app.css',
+  './js/theme.js',
   './js/storage.js',
   './js/app.js',
 ];
